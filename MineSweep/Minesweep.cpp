@@ -8,16 +8,20 @@
 time_t pTime;
 int mineMap[20][26] = { 0 };
 bool flagMap[20][26] = { 0 };
+bool openedMap[20][26] = { 0 };
 void generateMap();
 void printMap();
 bool markIndicator();
 bool currentPosition(int x, int y, WORD color);
+void openSurrand(int x, int y);
+void printOpenedMap();
 
-const int nMine = 99;
+const int nMine = 50;
 const int xM[8] = { -1, -1, -1, 0, 1, 1, 1, 0 };
 const int yM[8] = { -1, 0, 1, 1, 1, 0, -1, -1 };
 int counter = 0;
 CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+int mineCount = 0;
 
 int _tmain(int argc, _TCHAR* argv[])
 {
@@ -25,7 +29,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbiInfo);
 	generateMap();
 	markIndicator();
-	printMap();
+	//printMap();
+	openSurrand(0, 0);
+	printOpenedMap();
 	return 0;
 }
 
@@ -37,58 +43,58 @@ void generateMap(){
 }
 
 void printMap(){
-	for (int x = 0; x < 20;x++)
+	for (int x = 0; x < 20; x++)
 	{
-		for (int y = 0; y < 26;y++)
+		for (int y = 0; y < 26; y++)
 		{
-			if (mineMap[x][y]==0)
+			if (mineMap[x][y] == 0)
 			{
 				currentPosition(y, x, csbiInfo.wAttributes);
 				printf("■");
 			}
-			if ((mineMap[x][y]>=1)&&(mineMap[x][y]<=8))
+			if ((mineMap[x][y] >= 1) && (mineMap[x][y] <= 8))
 			{
 				switch (mineMap[x][y])
 				{
 				case 1:
 				{
-						  currentPosition(y, x, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED|FOREGROUND_INTENSITY);
+						  currentPosition(y, x, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
 						  printf("１");
 						  break;
 				}
 				case 2:
 				{
-						  currentPosition(y, x, FOREGROUND_BLUE|FOREGROUND_INTENSITY);
+						  currentPosition(y, x, FOREGROUND_BLUE | FOREGROUND_INTENSITY);
 						  printf("２");
 						  break;
 				}
 				case 3:
 				{
-						  currentPosition(y, x, FOREGROUND_GREEN|FOREGROUND_INTENSITY);
+						  currentPosition(y, x, FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 						  printf("３");
 						  break;
 				}
 				case 4:
 				{
-						  currentPosition(y, x, FOREGROUND_RED|FOREGROUND_INTENSITY);
+						  currentPosition(y, x, FOREGROUND_RED | FOREGROUND_INTENSITY);
 						  printf("４");
 						  break;
 				}
 				case 5:
 				{
-						  currentPosition(y, x, FOREGROUND_BLUE | FOREGROUND_GREEN|FOREGROUND_INTENSITY);
+						  currentPosition(y, x, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 						  printf("５");
 						  break;
 				}
 				case 6:
 				{
-						  currentPosition(y, x, FOREGROUND_BLUE | FOREGROUND_RED|FOREGROUND_INTENSITY);
+						  currentPosition(y, x, FOREGROUND_BLUE | FOREGROUND_RED | FOREGROUND_INTENSITY);
 						  printf("６");
 						  break;
 				}
 				case 7:
 				{
-						  currentPosition(y, x, FOREGROUND_GREEN | FOREGROUND_RED|FOREGROUND_INTENSITY);
+						  currentPosition(y, x, FOREGROUND_GREEN | FOREGROUND_RED | FOREGROUND_INTENSITY);
 						  printf("７");
 						  break;
 				}
@@ -102,10 +108,11 @@ void printMap(){
 					break;
 				}
 			}
-			if (mineMap[x][y]==99)
+			if (mineMap[x][y] == 99)
 			{
 				currentPosition(y, x, csbiInfo.wAttributes);
-				printf("¤");
+				//printf("¤");
+				printf("■");
 			}
 		}
 		printf("\n");
@@ -113,20 +120,20 @@ void printMap(){
 }
 
 bool markIndicator(){
-	for (int x = 0; x < 20;x++)
+	for (int x = 0; x < 20; x++)
 	{
-		for (int y = 0; y < 26;y++)
+		for (int y = 0; y < 26; y++)
 		{
 			counter = 0;
-			for (int n = 0; n < 8;n++)
+			for (int n = 0; n < 8; n++)
 			{
-				if (mineMap[x][y]==99)
+				if (mineMap[x][y] == 99)
 				{
 					break;				//判断是雷就跳过；
 				}
 				else
 				{
-					if (mineMap[x+xM[n]][y+yM[n]]==99)
+					if (mineMap[x + xM[n]][y + yM[n]] == 99)
 					{
 						counter++;     //遍历周围八个格子，有雷计数器+1；
 					}
@@ -138,7 +145,7 @@ bool markIndicator(){
 	return true;
 }
 
-bool currentPosition(int x, int y,WORD color)
+bool currentPosition(int x, int y, WORD color)
 {
 	CONSOLE_CURSOR_INFO CurInfo;
 
@@ -151,4 +158,76 @@ bool currentPosition(int x, int y,WORD color)
 	CurInfo.bVisible = true;
 	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &CurInfo);
 	return TRUE;
+}
+
+bool isFlaged(int x, int y){
+	if (flagMap[x][y]==1)
+	{
+		return true;
+	}
+	return false;
+}
+
+bool isMine(int x, int y){
+	if (mineMap[x][y]==99)
+	{
+		return true;
+	}
+	return false;
+}
+
+bool isOpen(int x, int y){
+	if (openedMap[x][y]==1)
+	{
+		return true;
+	}
+	return false;
+}
+
+void openSurrand(int x, int y){
+	openedMap[x][y] = 1;
+	for (int n = 1; n < 8;n+=2)
+	{
+		if (x + xM[n]<0 || y + yM[n]<0 || x + xM[n]>19 || y + yM[n]>25)
+		{
+			continue;
+		}
+		if (mineMap[x+xM[n]][y+yM[n]]==0)
+		{
+			openedMap[x + xM[n]][y + yM[n]] = 1;
+			if (!isFlaged(x + xM[n],y + yM[n]))
+			{
+				if (!isOpen(x+xM[n],y+yM[n]))
+				{
+					openSurrand(x + xM[n], y + yM[n]);
+				}
+			}
+		}
+		else if (mineMap[x+xM[n]][y+yM[n]]==99)
+		{
+			break;
+		}
+		else
+		{
+			openedMap[x + xM[n]][y + yM[n]] = 1;
+			break;
+		}
+
+	}
+}
+
+void printOpenedMap(){
+	for (int x = 0; x < 20;x++)
+	{
+		for (int y = 0; y < 26;y++)
+		{
+			if (openedMap[x][y] == 1)
+			{
+				printf("  ");
+			}
+			else
+				printf("■");
+		}
+		printf("\n");
+	}
 }
