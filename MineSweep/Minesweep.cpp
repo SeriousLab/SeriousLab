@@ -315,8 +315,8 @@ void gamePlay(){
 					  else
 					  {
 						  flagMap[irInBuf[i].Event.MouseEvent.dwMousePosition.Y][irInBuf[i].Event.MouseEvent.dwMousePosition.X / 2] = 1;
-						  currentPosition(irInBuf[i].Event.MouseEvent.dwMousePosition.X / 2, irInBuf[i].Event.MouseEvent.dwMousePosition.Y, FOREGROUND_RED | BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY);
-						  printf("︾");
+						  currentPosition(irInBuf[i].Event.MouseEvent.dwMousePosition.X / 2, irInBuf[i].Event.MouseEvent.dwMousePosition.Y, FOREGROUND_RED |FOREGROUND_INTENSITY|BACKGROUND_BLUE|BACKGROUND_GREEN|BACKGROUND_RED);
+						  printf("♀");
 						  break;
 					  }
 			}
