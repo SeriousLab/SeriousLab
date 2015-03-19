@@ -17,9 +17,10 @@ void openSurrand(int x, int y);
 void gameOver(int x, int y);
 void printCurrentCell(int x, int y);
 void gamePlay();
+bool isWin();
+void getnMine();
 
-
-const int nMine = 80;
+int nMine = 80;
 const int xM[8] = { -1, -1, -1, 0, 1, 1, 1, 0 };
 const int yM[8] = { -1, 0, 1, 1, 1, 0, -1, -1 };
 int counter = 0;
@@ -49,6 +50,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 		printf("\n");
 	}
+	getnMine();
 	gamePlay();
 	//printMap();
 
@@ -274,6 +276,12 @@ void openSurrand(int x, int y){
 void gamePlay(){
 	while (true)
 	{
+		if (isWin())
+		{
+			SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), exitCord);
+			printf("Congrats, you win!\n");
+			return;
+		}
 		if (!ReadConsoleInput(hStdin, irInBuf, 128, &cNumRead))
 		{
 			continue;
@@ -410,5 +418,37 @@ void printCurrentCell(int x, int y){
 	}
 	default:
 		break;
+	}
+}
+
+bool isWin(){
+	int nUnopen = 0;
+	for (int x = 0; x < 20;x++)
+	{
+		for (int y = 0; y < 26;y++)
+		{
+			if (openedMap[x][y]==0)
+			{
+				nUnopen++;
+			}
+		}
+	}
+	if (nUnopen==nMine)
+	{
+		return true;
+	}
+	return false;
+}
+
+void getnMine(){
+	for (int x = 0; x < 20;x++)
+	{
+		for (int y = 0; y < 26;y++)
+		{
+			if (mineMap[x][y]==99)
+			{
+				nMine++;
+			}
+		}
 	}
 }
