@@ -54,7 +54,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	gamePlay();
 	//printMap();
 
-
+	system("pause");
 	return 0;
 }
 
@@ -233,6 +233,7 @@ void openSurrand(int x, int y){
 					openSurrand(x + xM[n], y + yM[n]);
 				}
 			}
+			/*openedMap[x + xM[n]][y + yM[n]] = 1;*/
 		}
 		else if (mineMap[x + xM[n]][y + yM[n]] == 99)
 		{
@@ -247,6 +248,7 @@ void openSurrand(int x, int y){
 					openedMap[x + xM[n]][y + yM[n]] = 1;
 					printCurrentCell(x + xM[n], y + yM[n]);
 					openSurrand(x + xM[n], y + yM[n]);
+					/*openedMap[x + xM[n]][y + yM[n]] = 1;*/
 				}
 			}
 
@@ -313,6 +315,10 @@ void gamePlay(){
 			}
 			case 2:
 			{
+					  if (isOpen(irInBuf[i].Event.MouseEvent.dwMousePosition.Y,irInBuf[i].Event.MouseEvent.dwMousePosition.X/2))
+					  {
+						  break;
+					  }
 					  if (isFlaged(irInBuf[i].Event.MouseEvent.dwMousePosition.Y, irInBuf[i].Event.MouseEvent.dwMousePosition.X / 2))
 					  {
 						  flagMap[irInBuf[i].Event.MouseEvent.dwMousePosition.Y][irInBuf[i].Event.MouseEvent.dwMousePosition.X / 2] = 0;
@@ -323,7 +329,7 @@ void gamePlay(){
 					  else
 					  {
 						  flagMap[irInBuf[i].Event.MouseEvent.dwMousePosition.Y][irInBuf[i].Event.MouseEvent.dwMousePosition.X / 2] = 1;
-						  currentPosition(irInBuf[i].Event.MouseEvent.dwMousePosition.X / 2, irInBuf[i].Event.MouseEvent.dwMousePosition.Y, FOREGROUND_RED |FOREGROUND_INTENSITY|BACKGROUND_BLUE|BACKGROUND_GREEN|BACKGROUND_RED);
+						  currentPosition(irInBuf[i].Event.MouseEvent.dwMousePosition.X / 2, irInBuf[i].Event.MouseEvent.dwMousePosition.Y, FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED);
 						  printf("♀");
 						  break;
 					  }
@@ -423,17 +429,17 @@ void printCurrentCell(int x, int y){
 
 bool isWin(){
 	int nUnopen = 0;
-	for (int x = 0; x < 20;x++)
+	for (int x = 0; x < 20; x++)
 	{
-		for (int y = 0; y < 26;y++)
+		for (int y = 0; y < 26; y++)
 		{
-			if (openedMap[x][y]==0)
+			if (openedMap[x][y] == 0)
 			{
 				nUnopen++;
 			}
 		}
 	}
-	if (nUnopen==nMine)
+	if (nUnopen == nMine)
 	{
 		return true;
 	}
@@ -441,11 +447,12 @@ bool isWin(){
 }
 
 void getnMine(){
-	for (int x = 0; x < 20;x++)
+	nMine = 0;
+	for (int x = 0; x < 20; x++)
 	{
-		for (int y = 0; y < 26;y++)
+		for (int y = 0; y < 26; y++)
 		{
-			if (mineMap[x][y]==99)
+			if (mineMap[x][y] == 99)
 			{
 				nMine++;
 			}
