@@ -39,7 +39,6 @@ void mapEditor(COORD *saveCo)
 // 	SetConsoleScreenBufferSize(hStdOut, csbiRawMap.dwSize);
 // 	SetConsoleWindowInfo(hStdOut, true, &srRawMap);
 	//设置输出缓冲区大小，设置窗口大小
-	void printMessage(char(*pmt)[20], int numOfEle);
 
 	INPUT_RECORD irBuf[128];
 	DWORD cNumRead;
@@ -179,7 +178,7 @@ void selectBrickType(KEY_EVENT_RECORD ker, int *currentBrick){
 					 }
 				 }
 				 //写入文件
-				 fprintf_s(fpMap, "{%d,%d}", wolfPOS.X, wolfPOS.Y);
+				 fprintf_s(fpMap, "{%d,%d}", wolfPOS.Y, wolfPOS.X / 2);
 				 fclose(fpMap);
 				 //关闭文件指针
 

@@ -14,6 +14,7 @@
 #define LEVELEIGHT "twmEight"
 #define LEVELNINE "twmNine"
 #define LEVELTEN "twmTen"
+#define CUSTOMMAP "customMap"
 
 char g_mapEditorM[6][20] = {
 	"按1选择土墙▓",
@@ -24,7 +25,29 @@ char g_mapEditorM[6][20] = {
 	"按q保存并退出编辑"
 };
 
-char g_mapLevel[11][20] = {
+char g_welcomeM[10][20] = {
+	"按1开始单人游戏",
+	"按2开始双人游戏",
+	"按3进入地图编辑",
+	"按q退出游戏",
+	"",
+	"",
+	"Project:Tank War",
+	"Proudly presented",
+	"by: Sirius",
+	"Enjoy!"
+};
+
+char g_gamePlayM[9][20] = {
+	"□一级坦克",
+	"□二级坦克",
+	"□三级坦克",
+	"□四级坦克",
+	"□五级坦克",
+	"□六级坦克"
+};
+
+char g_mapLevel[12][20] = {
 	LOADGAME,
 	LEVELONE,
 	LEVELTWO,
@@ -35,7 +58,8 @@ char g_mapLevel[11][20] = {
 	LEVELSEVEN,
 	LEVELEIGHT,
 	LEVELNINE,
-	LEVELTEN
+	LEVELTEN,
+	CUSTOMMAP
 };
 
 char ammosType[5][3] = {
@@ -44,4 +68,17 @@ char ammosType[5][3] = {
 	"⊕",
 	"⊙",
 	"◎"
+};
+
+WORD tankColor[10] = {
+	0x0002 | 0x0008,
+	0x0001 | 0x0008,
+	0x0002 | 0x0004 | 0x0008,
+	0x0001 | 0x0004 | 0x0008,
+	0x0001 | 0x0002 | 0x0008,
+	0x0004 | 0x0008,
+	0x0001 | 0x0002 | 0x0004,
+	0x0001 | 0x0002 | 0x0004,
+	0x0001 | 0x0002 | 0x0004,
+	0x0001 | 0x0002 | 0x0004
 };

@@ -9,8 +9,12 @@
 
 extern char g_mapEditorM[6][20];
 //在地图编辑器边上显示的信息
-extern char g_mapLevel[11][20];
+extern char g_mapLevel[12][20];
 //关卡
+extern char g_welcomeM[10][20];
+extern char ammosType[5][3];
+extern WORD tankColor[10];
+extern char g_gamePlayM[9][20];
 
 const int tankDIR[4][2][5] = {
 	{ { -1, 0, 0, 1, 1 }, { 0, -1, 1, -1, 1 } },
@@ -34,9 +38,11 @@ const int ammoDIR[4][2][1] = {
 struct ammos
 {
 	COORD ammoPosition;
+	COORD lastCo;
 	int ammoType;
 	int ammoRange;
 	int directionIndex;
+	int ammoID;
 	bool isAvailable;
 	bool isFriendly;
 };
@@ -46,6 +52,7 @@ struct ammos
 //炮弹类型
 //炮弹杀伤范围
 //炮弹方向
+//炮弹的数组下标
 //方向指示，同坦克
 
 struct tanks
@@ -55,6 +62,7 @@ struct tanks
 	int tankAmmo;
 	int tankHealth;
 	int tankType;
+	int tankID;
 	int directionIndex;
 	int previousIndex;
 	bool isDead;
@@ -70,4 +78,16 @@ struct tanks
 //坦克方向
 //方向指示，0=上，1=左，2=下，3=右
 //死亡flag
+
+const int wolfPackPos[9][2][1] = {
+	{ { -1 }, { -1 } },
+	{ { -1 }, { 0 } },
+	{ { -1 }, { 1 } },
+	{ { 0 }, { -1 } },
+	{ { 0 }, { 0 } },
+	{ { 0 }, { 1 } },
+	{ { 1 }, { -1 } },
+	{ { 1 }, { 0 } },
+	{ { 1 }, { 1 } }
+};
 

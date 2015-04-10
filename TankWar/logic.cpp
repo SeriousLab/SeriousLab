@@ -1,40 +1,65 @@
 #include "stdafx.h"
 #include "data.h"
 #include "TankWar.h"
-#include <math.h>
 #include <time.h>
 #include <windows.h>
 #include <stdlib.h>
 #include <conio.h>
 
-tanks player1;
-tanks player2;
 ammos ammoArray[60];
-tanks enemyTank[3];
+tanks allTank[5];
 int enemyTankCount = 0;
+int tankMap[35][60] = { 0 };
+int ammoMap[35][60] = { 0 };
+COORD birthPlace;
+int gameLevel = 0;
 
-void initializeTank()
+void initializeTank(bool isDualPlayer)
 {
 	time_t ptime;
 	srand((unsigned int)time(&ptime));
-	player1.tankPosition.X = 20;
-	player1.tankPosition.Y = 2;
-	player1.directionIndex = TANKUP;
-	player1.previousIndex = player1.directionIndex;
-	for (int i = 0; i < 3; i++)
+	allTank[0].tankPosition.X = 20;
+	allTank[0].tankPosition.Y = 2;
+	allTank[0].directionIndex = TANKUP;
+	allTank[0].previousIndex = allTank[0].directionIndex;
+	allTank[0].tankID = 1;
+	allTank[0].tankType = 3;
+	allTank[0].tankAmmo = 33;
+	allTank[0].isFriendly = true;
+	allTank[1].tankPosition.X = 20;
+	allTank[1].tankPosition.Y = 57;
+	allTank[1].directionIndex = TANKUP;
+	allTank[1].previousIndex = allTank[1].directionIndex;
+	allTank[1].tankID = 2;
+	allTank[1].tankType = 5;
+	allTank[1].isFriendly = true;
+	allTank[1].tankAmmo = 22;
+	for (int i = 2; i < 5; i++)
 	{
-		enemyTank[i].isDead = true;
+		allTank[i].isDead = true;
 	}
+	for (int q = 0; q < 60; q++)
+	{
+		ammoArray[q].isAvailable = true;
+	}
+	tankMap[allTank[0].tankPosition.X][allTank[0].tankPosition.Y] = allTank[0].tankID;
 }
 
-void tankMoveTest()
+void tankMoveTest(bool gamePlay)
 {
 	INPUT_RECORD irMOVE[128] = { 0 };
 	DWORD numRead;
 	int iTime = 10000;
+	int iAmmo = 2000;
 	while (true)
 	{
 		iTime--;
+		iAmmo--;
+		if (!iAmmo)
+		{
+			ammoIsHit();
+			iAmmo = 2000;
+		}
 		if (!iTime)
 		{
 			randomTankMove();
@@ -50,30 +75,77 @@ void tankMoveTest()
 		{
 			if (irMOVE[m].Event.KeyEvent.bKeyDown)
 			{
-				switch (irMOVE[m].Event.KeyEvent.wVirtualKeyCode)
+				if (gamePlay)
 				{
-				case VK_UP:
-				{
-							  keyProcess(TANKUP, &player1);
-							  continue;
-				}
-				case VK_DOWN:
-				{
-								keyProcess(TANKDOWN, &player1);
-								continue;
-				}
-				case VK_LEFT:
-				{
-								keyProcess(TANKLEFT, &player1);
-								continue;
-				}
-				case VK_RIGHT:
-				{
-								 keyProcess(TANKRIGHT, &player1);
+
+					switch (irMOVE[m].Event.KeyEvent.wVirtualKeyCode)
+					{
+					case VK_UP:
+					{
+								  keyProcess(TANKUP, &allTank[0]);
+								  continue;
+					}
+					case VK_DOWN:
+					{
+									keyProcess(TANKDOWN, &allTank[0]);
+									continue;
+					}
+					case VK_LEFT:
+					{
+									keyProcess(TANKLEFT, &allTank[0]);
+									continue;
+					}
+					case VK_RIGHT:
+					{
+									 keyProcess(TANKRIGHT, &allTank[0]);
+									 continue;
+					}
+					case VK_SPACE:
+					{
+									 fireAmmo(allTank[0]);
+									 continue;
+					}
+					case 0x57:
+					{
+								 keyProcess(TANKUP, &allTank[1]);
 								 continue;
+					}
+					case 0x41:
+					{
+								 keyProcess(TANKLEFT, &allTank[1]);
+								 continue;
+					}
+					case 0x44:
+					{
+								 keyProcess(TANKRIGHT, &allTank[1]);
+								 continue;
+					}
+					case 0x53:
+					{
+								 keyProcess(TANKDOWN, &allTank[1]);
+								 continue;
+					}
+					case VK_RETURN:
+					{
+									  fireAmmo(allTank[1]);
+					}
+					default:
+						continue;
+					}
 				}
-				default:
-					continue;
+				else
+				{
+					switch (irMOVE[m].Event.KeyEvent.wVirtualKeyCode)
+					{
+					case 0x31:case VK_NUMPAD1:
+					{
+								  printMap(0);
+								  printMessage(g_gamePlayM, sizeof(g_gamePlayM) / sizeof(g_gamePlayM[0]));
+
+					}
+					default:
+						break;
+					}
 				}
 			}
 		}
@@ -109,13 +181,17 @@ reverseJump:
 
 bool isBlocked(tanks tank)
 {
-	if (gameMap[tank.tankPosition.X + ammoDIR[tank.directionIndex][0][0]][tank.tankPosition.Y + ammoDIR[tank.directionIndex][1][0]] != 0)
+	if (gameMap[tank.tankPosition.X][tank.tankPosition.Y] != 0)
 	{
 		return true;
 	}
 	for (int i = 0; i < 5; i++)
 	{
 		if (gameMap[tank.tankPosition.X + tankDIR[tank.directionIndex][0][i]][tank.tankPosition.Y + tankDIR[tank.directionIndex][1][i]] != 0)
+		{
+			return true;
+		}
+		if (tankMap[tank.tankPosition.X + tankDIR[tank.directionIndex][0][i]][tank.tankPosition.Y + tankDIR[tank.directionIndex][1][i]] != 0)
 		{
 			return true;
 		}
@@ -135,6 +211,10 @@ bool fireAmmo(tanks tank)
 			ammoArray[i].isFriendly = tank.isFriendly;
 			ammoArray[i].directionIndex = tank.directionIndex;
 			ammoArray[i].ammoType = tank.tankAmmo;
+			ammoArray[i].ammoID = i + 1;
+			ammoArray[i].lastCo.X = tank.tankPosition.X - ammoDIR[tank.directionIndex][0][0];
+			ammoArray[i].lastCo.Y = tank.tankPosition.Y - ammoDIR[tank.directionIndex][1][0];
+			ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] = ammoArray[i].ammoID;
 			return true;
 		}
 	}
@@ -145,22 +225,222 @@ void randomTankMove()
 {
 	if (enemyTankCount < 3)
 	{
-		for (int i = 0; i < 3; i++)
+		for (int i = 2; i < 5; i++)
 		{
-			if (enemyTank[i].isDead == true)
+			if (allTank[i].isDead == true)
 			{
-				enemyTank[i].directionIndex = rand() % 4;
-				enemyTank[i].isDead = false;
-				enemyTank[i].isFriendly = false;
-				enemyTank[i].tankType = 1;
-				enemyTank[i].tankPosition.X = 5 * i + 4;
-				enemyTank[i].tankPosition.Y = 2;
+				allTank[i].directionIndex = rand() % 4;
+				allTank[i].isDead = false;
+				allTank[i].isFriendly = false;
+				allTank[i].tankType = 1;
+				allTank[i].tankPosition.X = 5 * i + 4;
+				allTank[i].tankPosition.Y = 2;
+				allTank[i].tankID = i + 1;
+				allTank[i].tankAmmo = allTank[i].tankType * 11;
+				allTank[i].tankHealth = allTank[i].tankType * 11;
 				enemyTankCount++;
+				tankMap[allTank[i].tankPosition.X][allTank[i].tankPosition.Y] = allTank[i].tankID;
+				for (int s = 0; s < 5; s++)
+				{
+					tankMap[allTank[i].tankPosition.X + tankDIR[allTank[i].directionIndex][0][s]][allTank[i].tankPosition.Y + tankDIR[allTank[i].directionIndex][1][s]] = allTank[i].tankID;
+				}
 			}
 		}
 	}
-	for (int i = 0; i < 3; i++)
+	for (int i = 2; i < 5; i++)
 	{
-		keyProcess(rand() % 4, &enemyTank[i]);
+		if (allTank[i].isDead == false)
+		{
+			if (rand() % 10 == 3)
+			{
+				fireAmmo(allTank[i]);
+			}
+			tankMap[allTank[i].tankPosition.X][allTank[i].tankPosition.Y] = 0;
+			for (int s = 0; s < 5; s++)
+			{
+				tankMap[allTank[i].tankPosition.X + tankDIR[allTank[i].directionIndex][0][s]][allTank[i].tankPosition.Y + tankDIR[allTank[i].directionIndex][1][s]] = 0;
+			}
+			keyProcess(rand() % 4, &allTank[i]);
+			tankMap[allTank[i].tankPosition.X][allTank[i].tankPosition.Y] = allTank[i].tankID;
+			for (int s = 0; s < 5; s++)
+			{
+				tankMap[allTank[i].tankPosition.X + tankDIR[allTank[i].directionIndex][0][s]][allTank[i].tankPosition.Y + tankDIR[allTank[i].directionIndex][1][s]] = allTank[i].tankID;
+			}
+		}
+	}
+}
+
+bool ammoIsHit()
+{
+	for (int i = 0; i < 60; i++)
+	{
+		if (ammoArray[i].isAvailable == false)
+		{
+			printAmmo(&ammoArray[i], true, true);
+			if (gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] == 0)
+			{
+				if (tankMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] == 0)
+				{
+					if (ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] == 0)
+					{
+						ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] = ammoArray[i].ammoID;
+						continue;
+					}
+					else
+					{
+						if (ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] != ammoArray[i].ammoID)
+						{
+
+							if (ammoArray[ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1].ammoType > ammoArray[i].ammoType)
+							{
+								ammoArray[ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1].ammoType -= ammoArray[i].ammoType;
+								ammoArray[i].isAvailable = true;
+								continue;
+							}
+							else if (ammoArray[ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1].ammoType == ammoArray[i].ammoType)
+							{
+								ammoArray[ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1].isAvailable = true;
+								ammoArray[i].isAvailable = true;
+								ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] = 0;
+								printAmmo(&ammoArray[i], false, true);
+								continue;
+							}
+							else
+							{
+								ammoArray[ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1].isAvailable = true;
+								ammoArray[i].ammoType -= ammoArray[ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1].ammoType;
+								ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] = ammoArray[i].ammoID;
+								printAmmo(&ammoArray[ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1], true, true);
+								continue;
+							}
+						}
+					}
+				}
+				else
+				{
+					if (allTank[tankMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1].isFriendly == ammoArray[i].isFriendly)
+					{
+						ammoArray[i].isAvailable = true;
+						ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] = 0;
+						continue;
+					}
+					else
+					{
+						if (allTank[tankMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1].tankHealth > ammoArray[i].ammoType)
+						{
+							ammoArray[i].isAvailable = true;
+							ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] = 0;
+							allTank[tankMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1].tankHealth -= ammoArray[i].ammoType;
+							continue;
+						}
+						else if (allTank[tankMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1].tankHealth == ammoArray[i].ammoType)
+						{
+							ammoArray[i].isAvailable = true;
+							ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] = 0;
+							allTank[tankMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1].isDead = true;
+							printTank(&allTank[tankMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1], true);
+							continue;
+						}
+						else
+						{
+							allTank[tankMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1].isDead = true;
+							ammoArray[i].ammoType -= allTank[tankMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1].tankAmmo;
+							printTank(&allTank[tankMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] - 1], true);
+							continue;
+						}
+					}
+				}
+			}
+			else
+			{
+				if (gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] == 99)
+				{
+					ammoArray[i].isAvailable = true;
+					ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] = 0;
+					continue;
+				}
+				else
+				{
+					if (gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] > ammoArray[i].ammoType)
+					{
+						gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] -= ammoArray[i].ammoType;
+						ammoArray[i].isAvailable = true;
+						ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] = 0;
+						continue;
+					}
+					else if (gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] == ammoArray[i].ammoType)
+					{
+						gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] = 0;
+						ammoArray[i].isAvailable = true;
+						ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] = 0;
+						printAmmo(&ammoArray[i], false, true);
+						continue;
+					}
+					else
+					{
+						ammoArray[i].ammoType -= gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y];
+						gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] = 0;
+						continue;
+					}
+				}
+			}
+		}
+	}
+	for (int c = 0; c < 60; c++)
+	{
+		if (ammoArray[c].isAvailable == false)
+		{
+			printAmmo(&ammoArray[c], false, false);
+			ammoArray[c].lastCo = ammoArray[c].ammoPosition;
+			ammoArray[c].ammoPosition.X += ammoDIR[ammoArray[c].directionIndex][0][0];
+			ammoArray[c].ammoPosition.Y += ammoDIR[ammoArray[c].directionIndex][1][0];
+		}
+	}
+	return true;
+}
+
+void findFirstAvailableBirthPlace(bool isenemy)
+{
+	if (isenemy)
+	{
+		for (int i = 2; i < 33; i++)
+		{
+			for (int j = 2; j < 58; j++)
+			{
+				for (int t = 0; t < 9; t++)
+				{
+					if (gameMap[i + wolfPackPos[t][0][0]][j + wolfPackPos[t][1][0]])
+					{
+						goto here;
+					}
+				}
+				birthPlace.X = i;
+				birthPlace.Y = j;
+				return;
+			here:
+				;
+			}
+		}
+	}
+	else
+	{
+		for (int q = 32; q > 1; q--)
+		{
+			for (int y = 57; y > 1; y--)
+			{
+				for (int g = 0; g < 9; g++)
+				{
+					if (gameMap[q + wolfPackPos[g][0][0]][y + wolfPackPos[g][1][0]])
+					{
+						goto there;
+					}
+				}
+				birthPlace.X = q;
+				birthPlace.Y = y;
+				return;
+			there:
+				;
+			}
+		}
 	}
 }

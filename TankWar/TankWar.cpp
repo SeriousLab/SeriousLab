@@ -8,7 +8,7 @@
 HANDLE hStdOut;
 HANDLE hStdIn;
 CONSOLE_SCREEN_BUFFER_INFO csbiInitiatWindow;
-COORD coSave, coWOLF;
+COORD coSave = { 0, 0 }, coWOLF;
 int gameMap[35][60] = { 0 };
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -17,10 +17,10 @@ int _tmain(int argc, _TCHAR* argv[])
 	hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	initializeWindow();
 	//mapEditor(&coSave);
-	printMap();
-	initializeTank();
-	printTank(&player1, false);
-	tankMoveTest();
+	printMap(0);
+	printMessage(g_welcomeM, sizeof(g_welcomeM) / sizeof(g_welcomeM[0]));
+	initializeTank(false);
+	tankMoveTest(false);
 	return 0;
 }
 
@@ -48,14 +48,14 @@ bool readMap(char(*filename)[20], int(*pMap)[60])
 bool initializeWindow()
 {
 	system("cls");
-	SMALL_RECT srInitiatWindow = { 0, 0, 139, 39 };
+	SMALL_RECT srInitiatWindow = { 0, 0, 139, 36 };
 	GetConsoleScreenBufferInfo(hStdOut, &csbiInitiatWindow);
 	csbiInitiatWindow.dwSize.X = 140;
-	csbiInitiatWindow.dwSize.Y = 40;
+	csbiInitiatWindow.dwSize.Y = 37;
 	SetConsoleScreenBufferSize(hStdOut, csbiInitiatWindow.dwSize);
 	SetConsoleWindowInfo(hStdOut, true, &srInitiatWindow);
 	CONSOLE_CURSOR_INFO cciDrawMap;
-	cciDrawMap.bVisible = true;
+	cciDrawMap.bVisible = false;
 	cciDrawMap.dwSize = 1;
 	SetConsoleCursorInfo(hStdOut, &cciDrawMap);
 	return true;
@@ -68,18 +68,20 @@ void printMessage(char(*pmt)[20], int numOfEle)
 	coSave = csbiInitiatWindow.dwCursorPosition;
 	for (int i = 0; i < numOfEle; i++)
 	{
+		SetConsoleTextAttribute(hStdOut, tankColor[i]);
 		SetConsoleCursorPosition(hStdOut, coIndi);
 		printf("%s", *(pmt + i));
 		coIndi.Y += 2;
 	}
 	csbiInitiatWindow.dwCursorPosition = coSave;
 	SetConsoleCursorPosition(hStdOut, csbiInitiatWindow.dwCursorPosition);
+	SetConsoleTextAttribute(hStdOut, tankColor[8]);
 }
 
-bool printMap()
+bool printMap(int gameLevel)
 {
 	system("cls");
-	if (readMap(g_mapLevel, gameMap))
+	if (readMap((g_mapLevel+gameLevel), gameMap))
 	{
 		for (int x = 0; x < 35; x++)
 		{
@@ -129,14 +131,18 @@ void printTank(tanks *tank, bool iswipe)
 	COORD tempTankCo;
 	tempTankCo.X = tank->tankPosition.Y * 2;
 	tempTankCo.Y = tank->tankPosition.X;
-	bool test = SetConsoleCursorPosition(hStdOut, tempTankCo);
+	SetConsoleCursorPosition(hStdOut, tempTankCo);
 	if (iswipe)
 	{
 		printf("  ");
+		tankMap[tank->tankPosition.X][tank->tankPosition.Y] = 0;
 	}
 	else
 	{
-		printf("¡ö");
+		SetConsoleTextAttribute(hStdOut, tankColor[tank->tankType - 1]);
+		printf("¡õ");
+		tankMap[tank->tankPosition.X][tank->tankPosition.Y] = tank->tankID;
+		SetConsoleTextAttribute(hStdOut, tankColor[6]);
 	}
 
 	for (int i = 0; i < 5; i++)
@@ -147,11 +153,13 @@ void printTank(tanks *tank, bool iswipe)
 		{
 			tempTankCo.X += tankDIR[tank->previousIndex][1][i];
 			tempTankCo.Y += tankDIR[tank->previousIndex][0][i];
+			tankMap[tempTankCo.Y][tempTankCo.X] = 0;
 		}
 		else
 		{
 			tempTankCo.X += tankDIR[tank->directionIndex][1][i];
 			tempTankCo.Y += tankDIR[tank->directionIndex][0][i];
+			tankMap[tempTankCo.Y][tempTankCo.X] = tank->tankID;
 		}
 		tempTankCo.X *= 2;
 		SetConsoleCursorPosition(hStdOut, tempTankCo);
@@ -166,15 +174,35 @@ void printTank(tanks *tank, bool iswipe)
 	}
 }
 
-void printAmmo(ammos *ammo,bool isWipe)
+void printAmmo(ammos *ammo,bool isOld,bool isWipe)
 {
-	SetConsoleCursorPosition(hStdOut, ammo->ammoPosition);
-	if (isWipe)
+	COORD ammoTempCo;
+	if (isOld)
 	{
-		printf("  ");
+		ammoTempCo.X = ammo->lastCo.Y * 2;
+		ammoTempCo.Y = ammo->lastCo.X;
 	}
 	else
 	{
-		printf("%s", ammo->ammoType);
+		ammoTempCo.X = ammo->ammoPosition.Y * 2;
+		ammoTempCo.Y = ammo->ammoPosition.X;
+	}
+	SetConsoleCursorPosition(hStdOut, ammoTempCo);
+	if (isWipe)
+	{
+		printf("  ");
+		if (isOld)
+		{
+			ammoMap[ammo->lastCo.X][ammo->lastCo.Y] = 0;
+		}
+		else
+		{
+			ammoMap[ammo->ammoPosition.X][ammo->ammoPosition.Y] = 0;
+		}
+	}
+	else
+	{
+		printf("%s", ammosType[ammo->ammoType/11-1]);
+		ammoMap[ammo->ammoPosition.X][ammo->ammoPosition.Y] = ammo->ammoID;
 	}
 }
