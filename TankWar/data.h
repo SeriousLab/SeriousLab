@@ -12,7 +12,7 @@ extern char g_mapEditorM[6][20];
 extern char g_mapLevel[12][20];
 //¹Ø¿¨
 extern char g_welcomeM[10][20];
-extern char ammosType[5][3];
+extern char ammosType[7][3];
 extern WORD tankColor[10];
 extern char g_gamePlayM[9][20];
 

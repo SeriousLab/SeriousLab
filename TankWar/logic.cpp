@@ -49,10 +49,10 @@ void initializeTank(bool isDualPlayer)
 	tankMap[allTank[0].tankPosition.X][allTank[0].tankPosition.Y] = allTank[0].tankID;
 }
 
-void tankMoveTest(bool gamePlay, bool isInitial,bool dualPlayer)
+void tankMoveTest(bool gamePlay, bool isInitial, bool dualPlayer)
 {
 	printMap(gameLevel);
-	if (gameLevel!=11&&gameLevel!=0)
+	if (gamePlay)
 	{
 		printMessage(g_gamePlayM, sizeof(g_gamePlayM) / sizeof(g_gamePlayM[0]));
 	}
@@ -140,7 +140,7 @@ void tankMoveTest(bool gamePlay, bool isInitial,bool dualPlayer)
 					}
 					case 0x57:
 					{
-								 if (dualPlayer==false)
+								 if (dualPlayer == false)
 								 {
 									 continue;
 								 }
@@ -153,7 +153,7 @@ void tankMoveTest(bool gamePlay, bool isInitial,bool dualPlayer)
 					}
 					case 0x41:
 					{
-								 if (dualPlayer==false)
+								 if (dualPlayer == false)
 								 {
 									 continue;
 								 }
@@ -166,7 +166,7 @@ void tankMoveTest(bool gamePlay, bool isInitial,bool dualPlayer)
 					}
 					case 0x44:
 					{
-								 if (dualPlayer==false)
+								 if (dualPlayer == false)
 								 {
 									 continue;
 								 }
@@ -179,7 +179,7 @@ void tankMoveTest(bool gamePlay, bool isInitial,bool dualPlayer)
 					}
 					case 0x53:
 					{
-								 if (dualPlayer==false)
+								 if (dualPlayer == false)
 								 {
 									 continue;
 								 }
@@ -192,7 +192,7 @@ void tankMoveTest(bool gamePlay, bool isInitial,bool dualPlayer)
 					}
 					case VK_RETURN:
 					{
-									  if (dualPlayer==false)
+									  if (dualPlayer == false)
 									  {
 										  continue;
 									  }
@@ -207,6 +207,14 @@ void tankMoveTest(bool gamePlay, bool isInitial,bool dualPlayer)
 					{
 								 return;
 					}
+					case 0x52:
+					{
+								 for (int w = 0; w < 5; w++)
+								 {
+									 allTank[w].isDead = false;
+								 }
+								 continue;
+					}
 					default:
 						continue;
 					}
@@ -220,7 +228,7 @@ void tankMoveTest(bool gamePlay, bool isInitial,bool dualPlayer)
 								  isInitial = false;
 								  isDualPlayer = false;
 								  isGamePlay = true;
-								  gameInitial = true;
+								  gameInitial = false;
 								  //printMessage(g_gamePlayM, sizeof(g_gamePlayM) / sizeof(g_gamePlayM[0]));
 								  continue;
 
@@ -230,7 +238,7 @@ void tankMoveTest(bool gamePlay, bool isInitial,bool dualPlayer)
 								  isInitial = false;
 								  isDualPlayer = true;
 								  isGamePlay = true;
-								  gameInitial = true;
+								  gameInitial = false;
 								  //printMessage(g_gamePlayM, sizeof(g_gamePlayM) / sizeof(g_gamePlayM[0]));
 								  continue;
 					}
@@ -253,7 +261,7 @@ void tankMoveTest(bool gamePlay, bool isInitial,bool dualPlayer)
 			}
 		}
 	}
-	tankMoveTest(isGamePlay, gameInitial,isDualPlayer);
+	tankMoveTest(isGamePlay, gameInitial, isDualPlayer);
 }
 
 void keyProcess(int moveDirection, tanks *tank)
@@ -336,7 +344,7 @@ void randomTankMove()
 				allTank[i].directionIndex = rand() % 4;
 				allTank[i].isDead = false;
 				allTank[i].isFriendly = false;
-				allTank[i].tankType = 1;
+				allTank[i].tankType = rand() % 6 + 1;
 				allTank[i].tankPosition.X = 5 * i + 4;
 				allTank[i].tankPosition.Y = 2;
 				allTank[i].tankID = i + 1;
@@ -463,13 +471,13 @@ bool ammoIsHit()
 					ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] = 0;
 					continue;
 				}
-				if (gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y]==66)
+				if (gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] == 66)
 				{
-					if (ammoArray[i].ammoType>=gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y])
+					if (ammoArray[i].ammoType >= gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y])
 					{
-						for (int k = 0; k < 9;k++)
+						for (int k = 0; k < 9; k++)
 						{
-							COORD ctemp = coWolf;
+							COORD ctemp = coWOLF;
 							ctemp.X += wolfPackPos[k][0][0];
 							ctemp.Y += wolfPackPos[k][1][0];
 							endGame(ctemp);
@@ -477,9 +485,9 @@ bool ammoIsHit()
 					}
 					else
 					{
-						for (int l = 0; l < 9;l++)
+						for (int l = 0; l < 9; l++)
 						{
-							gameMap[coWolf.X + wolfPackPos[l][0][0]][coWolf.Y + wolfPackPos[l][1][0]] -= ammoArray[i].ammoType;
+							gameMap[coWOLF.X + wolfPackPos[l][0][0]][coWOLF.Y + wolfPackPos[l][1][0]] -= ammoArray[i].ammoType;
 						}
 						ammoArray[i].isAvailable = true;
 					}

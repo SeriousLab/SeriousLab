@@ -124,11 +124,11 @@ bool printMap(int gameLevel)
 			printf("\n");
 		}
 
+		gameLevel++;
 		if (gameLevel > 11)
 		{
 			gameLevel = 0;
 		}
-		gameLevel++;
 		gameInitial = true;
 		return true;
 	}
@@ -154,7 +154,10 @@ void printTank(tanks *tank, bool iswipe)
 		tankMap[tank->tankPosition.X][tank->tankPosition.Y] = tank->tankID;
 		SetConsoleTextAttribute(hStdOut, tankColor[6]);
 	}
-
+	if (tank->isFriendly)
+	{
+		SetConsoleTextAttribute(hStdOut, tankColor[9]);
+	}
 	for (int i = 0; i < 5; i++)
 	{
 		tempTankCo.X = tank->tankPosition.Y;
@@ -182,6 +185,7 @@ void printTank(tanks *tank, bool iswipe)
 			printf("¡ö");
 		}
 	}
+	SetConsoleTextAttribute(hStdOut, tankColor[8]);
 }
 
 void printAmmo(ammos *ammo,bool isOld,bool isWipe)
