@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "TankWar.h"
+#include <stdlib.h>
 
 
 int wolfX[9] = { -2, 0, 2, -2, 0, 2, -2, 0, 2 };
@@ -26,7 +27,7 @@ void mapEditor(COORD *saveCo)
 	wchar_t cTitle[] = L"Map editor";
 	SetConsoleTitle(cTitle);
 	//设置标题
-
+	system("cls");
 	
 	//tankwar.cpp里定义过的两个句柄和一个结构体
 
@@ -178,7 +179,8 @@ void selectBrickType(KEY_EVENT_RECORD ker, int *currentBrick){
 					 }
 				 }
 				 //写入文件
-				 fprintf_s(fpMap, "{%d,%d}", wolfPOS.Y, wolfPOS.X / 2);
+				 fprintf_s(fpMap, "{%d,%d},", wolfPOS.Y, wolfPOS.X / 2);
+				 fprintf_s(fpMap, "{enemycount=50}");
 				 fclose(fpMap);
 				 //关闭文件指针
 

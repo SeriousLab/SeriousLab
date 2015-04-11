@@ -13,6 +13,10 @@ int tankMap[35][60] = { 0 };
 int ammoMap[35][60] = { 0 };
 COORD birthPlace;
 int gameLevel = 0;
+bool gameInitial = true;
+bool isDualPlayer = false;
+bool isGamePlay = false;
+int killCount = 0;
 
 void initializeTank(bool isDualPlayer)
 {
@@ -45,13 +49,22 @@ void initializeTank(bool isDualPlayer)
 	tankMap[allTank[0].tankPosition.X][allTank[0].tankPosition.Y] = allTank[0].tankID;
 }
 
-void tankMoveTest(bool gamePlay)
+void tankMoveTest(bool gamePlay, bool isInitial,bool dualPlayer)
 {
+	printMap(gameLevel);
+	if (gameLevel!=11&&gameLevel!=0)
+	{
+		printMessage(g_gamePlayM, sizeof(g_gamePlayM) / sizeof(g_gamePlayM[0]));
+	}
+	else
+	{
+		printMessage(g_welcomeM, sizeof(g_welcomeM) / sizeof(g_welcomeM[0]));
+	}
 	INPUT_RECORD irMOVE[128] = { 0 };
 	DWORD numRead;
 	int iTime = 10000;
 	int iAmmo = 2000;
-	while (true)
+	while (isInitial)
 	{
 		iTime--;
 		iAmmo--;
@@ -82,52 +95,117 @@ void tankMoveTest(bool gamePlay)
 					{
 					case VK_UP:
 					{
+								  if (isTankDead(allTank[0]))
+								  {
+									  continue;
+								  }
 								  keyProcess(TANKUP, &allTank[0]);
 								  continue;
 					}
 					case VK_DOWN:
 					{
+									if (isTankDead(allTank[0]))
+									{
+										continue;
+									}
 									keyProcess(TANKDOWN, &allTank[0]);
 									continue;
 					}
 					case VK_LEFT:
 					{
+									if (isTankDead(allTank[0]))
+									{
+										continue;
+									}
 									keyProcess(TANKLEFT, &allTank[0]);
 									continue;
 					}
 					case VK_RIGHT:
 					{
+									 if (isTankDead(allTank[0]))
+									 {
+										 continue;
+									 }
 									 keyProcess(TANKRIGHT, &allTank[0]);
 									 continue;
 					}
 					case VK_SPACE:
 					{
+									 if (isTankDead(allTank[0]))
+									 {
+										 continue;
+									 }
 									 fireAmmo(allTank[0]);
 									 continue;
 					}
 					case 0x57:
 					{
+								 if (dualPlayer==false)
+								 {
+									 continue;
+								 }
+								 if (isTankDead(allTank[1]))
+								 {
+									 continue;
+								 }
 								 keyProcess(TANKUP, &allTank[1]);
 								 continue;
 					}
 					case 0x41:
 					{
+								 if (dualPlayer==false)
+								 {
+									 continue;
+								 }
+								 if (isTankDead(allTank[1]))
+								 {
+									 continue;
+								 }
 								 keyProcess(TANKLEFT, &allTank[1]);
 								 continue;
 					}
 					case 0x44:
 					{
+								 if (dualPlayer==false)
+								 {
+									 continue;
+								 }
+								 if (isTankDead(allTank[1]))
+								 {
+									 continue;
+								 }
 								 keyProcess(TANKRIGHT, &allTank[1]);
 								 continue;
 					}
 					case 0x53:
 					{
+								 if (dualPlayer==false)
+								 {
+									 continue;
+								 }
+								 if (isTankDead(allTank[1]))
+								 {
+									 continue;
+								 }
 								 keyProcess(TANKDOWN, &allTank[1]);
 								 continue;
 					}
 					case VK_RETURN:
 					{
+									  if (dualPlayer==false)
+									  {
+										  continue;
+									  }
+									  if (isTankDead(allTank[1]))
+									  {
+										  continue;
+									  }
 									  fireAmmo(allTank[1]);
+									  continue;
+					}
+					case 0x51:
+					{
+								 return;
 					}
 					default:
 						continue;
@@ -139,9 +217,34 @@ void tankMoveTest(bool gamePlay)
 					{
 					case 0x31:case VK_NUMPAD1:
 					{
-								  printMap(0);
-								  printMessage(g_gamePlayM, sizeof(g_gamePlayM) / sizeof(g_gamePlayM[0]));
+								  isInitial = false;
+								  isDualPlayer = false;
+								  isGamePlay = true;
+								  gameInitial = true;
+								  //printMessage(g_gamePlayM, sizeof(g_gamePlayM) / sizeof(g_gamePlayM[0]));
+								  continue;
 
+					}
+					case 0x32:case VK_NUMPAD2:
+					{
+								  isInitial = false;
+								  isDualPlayer = true;
+								  isGamePlay = true;
+								  gameInitial = true;
+								  //printMessage(g_gamePlayM, sizeof(g_gamePlayM) / sizeof(g_gamePlayM[0]));
+								  continue;
+					}
+					case 0x33:case VK_NUMPAD3:
+					{
+								  mapEditor(&coSave);
+								  isInitial = false;
+								  isGamePlay = false;
+								  gameLevel = 11;
+								  continue;
+					}
+					case 0x51:
+					{
+								 return;
 					}
 					default:
 						break;
@@ -150,6 +253,7 @@ void tankMoveTest(bool gamePlay)
 			}
 		}
 	}
+	tankMoveTest(isGamePlay, gameInitial,isDualPlayer);
 }
 
 void keyProcess(int moveDirection, tanks *tank)
@@ -359,6 +463,27 @@ bool ammoIsHit()
 					ammoMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] = 0;
 					continue;
 				}
+				if (gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y]==66)
+				{
+					if (ammoArray[i].ammoType>=gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y])
+					{
+						for (int k = 0; k < 9;k++)
+						{
+							COORD ctemp = coWolf;
+							ctemp.X += wolfPackPos[k][0][0];
+							ctemp.Y += wolfPackPos[k][1][0];
+							endGame(ctemp);
+						}
+					}
+					else
+					{
+						for (int l = 0; l < 9;l++)
+						{
+							gameMap[coWolf.X + wolfPackPos[l][0][0]][coWolf.Y + wolfPackPos[l][1][0]] -= ammoArray[i].ammoType;
+						}
+						ammoArray[i].isAvailable = true;
+					}
+				}
 				else
 				{
 					if (gameMap[ammoArray[i].ammoPosition.X][ammoArray[i].ammoPosition.Y] > ammoArray[i].ammoType)
@@ -443,4 +568,13 @@ void findFirstAvailableBirthPlace(bool isenemy)
 			}
 		}
 	}
+}
+
+bool isTankDead(tanks tank)
+{
+	if (tank.isDead)
+	{
+		return true;
+	}
+	return false;
 }

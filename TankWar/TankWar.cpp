@@ -20,7 +20,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	printMap(0);
 	printMessage(g_welcomeM, sizeof(g_welcomeM) / sizeof(g_welcomeM[0]));
 	initializeTank(false);
-	tankMoveTest(false);
+	tankMoveTest(isGamePlay,gameInitial,isDualPlayer);
+	CloseHandle(hStdOut);
+	CloseHandle(hStdIn);
 	return 0;
 }
 
@@ -38,7 +40,8 @@ bool readMap(char(*filename)[20], int(*pMap)[60])
 				fscanf_s(ptrFile, "%d,", &pMap[x][y]);
 			}
 		}
-		fscanf_s(ptrFile, "{%d,%d}", &coWOLF.X, &coWOLF.Y);
+		fscanf_s(ptrFile, "{%d,%d},", &coWOLF.X, &coWOLF.Y);
+		fscanf_s(ptrFile, "{enemycount=%d}", &enemyTankCount);
 		fclose(ptrFile);
 		return true;
 	}
@@ -48,10 +51,10 @@ bool readMap(char(*filename)[20], int(*pMap)[60])
 bool initializeWindow()
 {
 	system("cls");
-	SMALL_RECT srInitiatWindow = { 0, 0, 139, 36 };
+	SMALL_RECT srInitiatWindow = { 0, 0, 139, 39 };
 	GetConsoleScreenBufferInfo(hStdOut, &csbiInitiatWindow);
 	csbiInitiatWindow.dwSize.X = 140;
-	csbiInitiatWindow.dwSize.Y = 37;
+	csbiInitiatWindow.dwSize.Y = 40;
 	SetConsoleScreenBufferSize(hStdOut, csbiInitiatWindow.dwSize);
 	SetConsoleWindowInfo(hStdOut, true, &srInitiatWindow);
 	CONSOLE_CURSOR_INFO cciDrawMap;
@@ -120,6 +123,13 @@ bool printMap(int gameLevel)
 			}
 			printf("\n");
 		}
+
+		if (gameLevel > 11)
+		{
+			gameLevel = 0;
+		}
+		gameLevel++;
+		gameInitial = true;
 		return true;
 	}
 
@@ -205,4 +215,10 @@ void printAmmo(ammos *ammo,bool isOld,bool isWipe)
 		printf("%s", ammosType[ammo->ammoType/11-1]);
 		ammoMap[ammo->ammoPosition.X][ammo->ammoPosition.Y] = ammo->ammoID;
 	}
+}
+
+void endGame(COORD wolf)
+{
+	SetConsoleCursorPosition(hStdOut, wolf);
+	printf("  ");
 }
