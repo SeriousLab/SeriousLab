@@ -11,8 +11,16 @@
 #include "tuiPOPUP.h"
 #include <iostream>
 
+bool exitTest;
+bool isINGAME;
+bool isEditor;
+int(*pDefaultMap)[80];
 int _tmain(int argc, _TCHAR* argv[])
 {
+	exitTest = false;
+	isINGAME = true;
+	INPUT_RECORD irGameMode[128];
+	DWORD gameMODE;
 	time_t pTime;
 	srand((unsigned int)time(&pTime));
 	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -20,10 +28,88 @@ int _tmain(int argc, _TCHAR* argv[])
 	drawWindow(hIn, hOut);
 	tuiPOPUP gameWelcom(welcomMessage, _countof(welcomMessage));
 	gameWelcom.popUP();
-	int tttt = 0;
-	std::cin >> tttt;
+	tuiPOPUP gameOperationInfo(gamePlayinfo, _countof(gamePlayinfo));
+
 	initialPreDefinedMaps();
-	drawMap(g_map_watchOnly, hOut);
+
+	while (!exitTest)
+	{
+		ReadConsoleInput(hIn, irGameMode, 128, &gameMODE);
+		for (unsigned int i = 0; i < gameMODE; i++)
+		{
+			if (irGameMode[i].Event.KeyEvent.bKeyDown)
+			{
+
+				switch (irGameMode[i].Event.KeyEvent.wVirtualKeyCode)
+				{
+				case 0x31:case VK_NUMPAD1:
+				{
+							  gameOperationInfo.popUP();
+							  Sleep(3000);
+							  isINGAME = true;
+							  gamePlay(hIn, hOut, false);
+							  gameWelcom.popUP();
+							  break;
+				}
+				case 0x32:case VK_NUMPAD2:
+				{
+							  gameOperationInfo.popUP();
+							  Sleep(3000);
+							  gamePlay(hIn, hOut, true);
+							  break;
+				}
+				case 0x33:case VK_NUMPAD3:
+				{
+							  break;
+				}
+				case 0x34:case VK_NUMPAD4:
+				{
+							  break;
+				}
+				case 0x35:case VK_NUMPAD5:
+				{
+							  break;
+				}
+				case 0x36:case VK_NUMPAD6:
+				{
+							  isEditor = true;
+							  mapEditor(hIn, hOut);
+							  gameWelcom.popUP();
+							  break;
+				}
+				case 0x37:case VK_NUMPAD7:
+				{
+							  break;
+				}
+				case 0x38:case VK_NUMPAD8:
+				{
+							  break;
+				}
+				case 0x39:case VK_NUMPAD9:
+				{
+							  break;
+				}
+				case VK_ESCAPE:
+				{
+								  COORD exitTemp = { 0, 0 };
+								  for (int i = 0; i < 40; i++)
+								  {
+									  exitTemp.Y = i;
+									  FillConsoleOutputAttribute(hOut, 0, 160, exitTemp, &gameMODE);
+								  }
+								  CloseHandle(hIn);
+								  CloseHandle(hOut);
+								  return 0;
+				}
+				default:
+					break;
+				}
+			}
+		}
+	}
+	/*int tttt = 0;
+	std::cin >> tttt;*/
+	//drawMap(g_map_watchOnly, hOut);
 	//mapEditor(hIn, hOut);
 	CloseHandle(hIn);
 	CloseHandle(hOut);
@@ -60,7 +146,7 @@ void drawMap(int(*pMap)[80], HANDLE hOUT)
 	{
 		for (int y = 0; y < 80; y++)
 		{
-			if (pMap[x][y]==MINE)
+			if (pMap[x][y] == MINE)
 			{
 				continue;
 			}
@@ -71,4 +157,99 @@ void drawMap(int(*pMap)[80], HANDLE hOUT)
 			WriteConsoleOutputAttribute(hOUT, &wallColor[pMap[x][y] / 11111 % 10], 1, temp, &dwDRAWnRW);
 		}
 	}
+}
+
+void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
+{
+	INPUT_RECORD irGame[128];
+	DWORD gameNUM;
+	drawMap(g_map_inTheJungle, hOUT);
+	SetConsoleActiveScreenBuffer(hOUT);
+
+	while (isINGAME)
+	{
+		ReadConsoleInput(hIN, irGame, 128, &gameNUM);
+		for (unsigned int i = 0; i < gameNUM; i++)
+		{
+			if (irGame[i].Event.KeyEvent.bKeyDown)
+			{
+				switch (irGame[i].Event.KeyEvent.wVirtualKeyCode)
+				{
+				case VK_UP:
+				{
+							  break;
+				}
+				case VK_DOWN:
+				{
+								break;
+				}
+				case VK_LEFT:
+				{
+								break;
+				}
+				case VK_RIGHT:
+				{
+								 break;
+				}
+				case VK_SPACE:
+				{
+								 break;
+				}
+				case 0x57:
+				{
+							 if (isDualPlayer)
+							 {
+								 ;
+							 }
+							 break;
+				}
+				case 0x53:
+				{
+							 if (isDualPlayer)
+							 {
+								 ;
+							 }
+							 break;
+				}
+				case 0x41:
+				{
+							 if (isDualPlayer)
+							 {
+								 ;
+							 }
+							 break;
+				}
+				case 0x44:
+				{
+							 if (isDualPlayer)
+							 {
+								 ;
+							 }
+							 break;
+				}
+				case VK_ESCAPE:
+				{
+								  isINGAME = false;
+								  break;
+				}
+				case VK_TAB:
+				{
+
+				}
+				default:
+					break;
+				}
+			}
+		}
+	}
+}
+
+void gameLayerSWAP()
+{
+
+}
+
+void setDefaultMap()
+{
+
 }

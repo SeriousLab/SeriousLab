@@ -13,6 +13,6 @@
 #define BEDROCK 99999
 #define EMPTY 0
 
-void mapEditor(HANDLE hIN,HANDLE hOUT);
+void mapEditor(HANDLE hIN, HANDLE hOUT);
 void changeBrick(KEY_EVENT_RECORD ker, HANDLE hOLD,int(*pRawMap)[80],tuiPOPUP& editorPOP);
 void drawONrawMap(MOUSE_EVENT_RECORD mer, int(*pRawMap)[80], HANDLE hOUT, int& brickT);

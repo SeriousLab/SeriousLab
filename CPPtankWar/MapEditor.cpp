@@ -17,7 +17,7 @@ void mapEditor(HANDLE hIN, HANDLE hOUT)
 	SetConsoleTitleW(titleMap);
 	SetConsoleMode(hIN, ENABLE_MOUSE_INPUT);
 	brickType = EMPTY;
-	while (true)
+	while (isEditor)
 	{
 		INPUT_RECORD irBuf[128];
 		DWORD dwNumRead = 0;
@@ -130,6 +130,7 @@ void changeBrick(KEY_EVENT_RECORD ker, HANDLE hOLD, int(*pRawMap)[80],tuiPOPUP& 
 							  fprintf_s(fpMapOut, "a},\n");
 						  }
 						  fclose(fpMapOut);
+						  isEditor = false;
 						  return;
 		}
 		default:

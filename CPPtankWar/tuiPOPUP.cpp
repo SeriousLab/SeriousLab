@@ -28,7 +28,7 @@ wchar_t* editorMessage[20] = {
 	L"按 0 开始擦除   , 知错就改还是好同志"
 };
 
-wchar_t* welcomMessage[22] = {
+wchar_t* welcomMessage[26] = {
 	L"___________              __            __      __               ",
 	L"\\__    ___/____    ____ |  | __       /  \\    /  \\_____ _______ ",
 	L"  |    |  \\__  \\  /    \\|  |/ /       \\   \\/\\/   /\\__  \\\\_  __ \\",
@@ -50,7 +50,42 @@ wchar_t* welcomMessage[22] = {
 	L" ",
 	L"按 7 查看统计信息",
 	L" ",
+	L"按 8 迷雾模式随机",
+	L" ",
+	L"按 9 探索模式随机",
+	L" ",
 	L"按ESC退出坦克大战"
+};
+
+wchar_t* gamePlayinfo[28] = {
+	L"玩家 1 操作说明",
+	L"玩家 2 操作说明",
+	L" ",
+	L" ",
+	L"按 ↑ 向上移动",
+	L"按 W 向上移动",
+	L" ",
+	L" ",
+	L"按 ← 向左移动",
+	L"按 A 向左移动",
+	L" ",
+	L" ",
+	L"按 ↓ 向下移动",
+	L"按 S 向下移动",
+	L" ",
+	L" ",
+	L"按 → 向右移动",
+	L"按 D 向右移动",
+	L" ",
+	L" ",
+	L"按SPACE发射炮弹",
+	L"按ENTER发射炮弹",
+	L" ",
+	L" ",
+	L"按 TAB 查看信息",
+	L"按 TAB 查看信息",
+	L" ",
+	L" ",
 };
 
 tuiPOPUP::tuiPOPUP(wchar_t* pszMessage[], size_t lengthOfMessage)

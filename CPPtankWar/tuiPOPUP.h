@@ -3,8 +3,10 @@
 #include <conio.h>
 
 extern wchar_t* editorMessage[20];
-extern wchar_t* welcomMessage[22];
+extern wchar_t* welcomMessage[26];
 extern WORD const popUPBack[4];
+extern wchar_t* gamePlayinfo[28];
+
 class tuiPOPUP
 {
 public:
@@ -39,7 +41,7 @@ public:
 	{
 		COORD tempCO = topLeftPOP;
 		tempCO.Y++;
-		if (m_messageLen < 25)
+		if (m_messageLen < 27)
 		{
 			for (int i = 0; i < m_messageLen; i++)
 			{
@@ -48,7 +50,7 @@ public:
 				WriteConsoleOutputCharacter(hPOP, m_ptMessage[i], wcslen(m_ptMessage[i]), tempCO, &m_numWritten);
 			}
 		}
-		if (m_messageLen>24 && m_messageLen < 49)
+		if (m_messageLen>26 && m_messageLen < 50)
 		{
 			for (int i = 0; i < m_messageLen; i++)
 			{
@@ -64,7 +66,7 @@ public:
 	}
 	void randomBack()
 	{
-		for (int i = 0; i < 2000;i++)
+		for (int i = 0; i < 2500;i++)
 		{
 			COORD tempCO = { rand() % 80 * 2, rand() % 40 };
 			FillConsoleOutputAttribute(hPOP, popUPBack[rand() % 4], 2, tempCO, &m_numWritten);
