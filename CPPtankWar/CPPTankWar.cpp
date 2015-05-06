@@ -10,11 +10,24 @@
 #include "Wall.h"
 #include "tuiPOPUP.h"
 #include <iostream>
+#include <vector>
+#include "Tank.h"
+#include "Cannon.h"
+
+using std::vector;
 
 bool exitTest;
 bool isINGAME;
 bool isEditor;
+bool isMistMode;
 int(*pDefaultMap)[80];
+vector<COORD> vecPortal;
+vector<CTank> vecTank;
+vector<CCannon> vecCan;
+HANDLE hOut;
+HANDLE hIn;
+int tankPOSmap[40][80] = { 0 };
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	exitTest = false;
@@ -23,8 +36,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	DWORD gameMODE;
 	time_t pTime;
 	srand((unsigned int)time(&pTime));
-	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-	HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+	hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	hIn = GetStdHandle(STD_INPUT_HANDLE);
 	drawWindow(hIn, hOut);
 	tuiPOPUP gameWelcom(welcomMessage, _countof(welcomMessage));
 	gameWelcom.popUP();
@@ -55,7 +68,9 @@ int _tmain(int argc, _TCHAR* argv[])
 				{
 							  gameOperationInfo.popUP();
 							  Sleep(3000);
+							  isINGAME = true;
 							  gamePlay(hIn, hOut, true);
+							  gameWelcom.popUP();
 							  break;
 				}
 				case 0x33:case VK_NUMPAD3:
@@ -150,6 +165,11 @@ void drawMap(int(*pMap)[80], HANDLE hOUT)
 			{
 				continue;
 			}
+			if (pMap[x][y] == PORTAL)
+			{
+				COORD portalCO = { y*2, x };
+				vecPortal.push_back(portalCO);
+			}
 			COORD temp = { 2 * y, x };
 			WriteConsoleOutputAttribute(hOUT, &wallColor[pMap[x][y] / 11111 % 10], 1, temp, &dwDRAWnRW);
 			WriteConsoleOutputCharacter(hOUT, wallType[(pMap[x][y] / 11111) % 10], 1, temp, &dwDRAWnRW);
@@ -161,13 +181,37 @@ void drawMap(int(*pMap)[80], HANDLE hOUT)
 
 void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
 {
+	pDefaultMap = g_map_mineField;
 	INPUT_RECORD irGame[128];
 	DWORD gameNUM;
-	drawMap(g_map_inTheJungle, hOUT);
+	drawMap(pDefaultMap, hOUT);
 	SetConsoleActiveScreenBuffer(hOUT);
+	COORD playerOneBirth = { 10, 4 };
+	for (int i = 0; i < 6; i++)
+	{
+		CTank temp(i % 4, playerOneBirth, i + 1, i < 2 ? true : false, i < 2 ? false : true, i + 1);
+		vecTank.push_back(temp);
+	}
+	//CTank playerOne(UP, playerOneBirth, 1, true, false, 1);
 
 	while (isINGAME)
 	{
+		for (unsigned int i = 0; i < vecTank.size();i++)
+		{
+			if (vecTank[i].m_computerControl)
+			{
+				vecTank[i].tankMove(rand() % 4);
+				if (!vecTank[i].m_isAlive)
+				{
+					vecTank.erase(vecTank.begin() + i);
+				}
+			}
+		}
+		Sleep(250 / (vecTank.size() + 1));
+		if (!_kbhit())
+		{
+			continue;
+		}
 		ReadConsoleInput(hIN, irGame, 128, &gameNUM);
 		for (unsigned int i = 0; i < gameNUM; i++)
 		{
@@ -177,18 +221,22 @@ void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
 				{
 				case VK_UP:
 				{
+							  vecTank[0].tankMove(UP);
 							  break;
 				}
 				case VK_DOWN:
 				{
+								vecTank[0].tankMove(DOWN);
 								break;
 				}
 				case VK_LEFT:
 				{
+								vecTank[0].tankMove(LEFT);
 								break;
 				}
 				case VK_RIGHT:
 				{
+								 vecTank[0].tankMove(RIGHT);
 								 break;
 				}
 				case VK_SPACE:
@@ -253,3 +301,4 @@ void setDefaultMap()
 {
 
 }
+

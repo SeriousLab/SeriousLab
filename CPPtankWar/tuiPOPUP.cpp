@@ -13,7 +13,7 @@ wchar_t* editorMessage[20] = {
 	L" ",
 	L"按 3 选择陷阱 ※ , 进去就别想出来",
 	L" ",
-	L"按 4 选择河流 ≈ , 发动机会进水的",
+	L"按 4 选择河流 ≈ , 其实只是个装饰",
 	L" ",
 	L"按 5 选择草丛 ≡ , 跟敌人躲猫猫吧",
 	L" ",
@@ -57,7 +57,7 @@ wchar_t* welcomMessage[26] = {
 	L"按ESC退出坦克大战"
 };
 
-wchar_t* gamePlayinfo[28] = {
+wchar_t* gamePlayinfo[30] = {
 	L"玩家 1 操作说明",
 	L"玩家 2 操作说明",
 	L" ",
@@ -82,10 +82,12 @@ wchar_t* gamePlayinfo[28] = {
 	L"按ENTER发射炮弹",
 	L" ",
 	L" ",
-	L"按 TAB 查看信息",
-	L"按 TAB 查看信息",
 	L" ",
 	L" ",
+	L"按 TAB 查看信息",
+	L"按 ESC 退出游戏",
+	L" ",
+	L" "
 };
 
 tuiPOPUP::tuiPOPUP(wchar_t* pszMessage[], size_t lengthOfMessage)

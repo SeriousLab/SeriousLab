@@ -5,7 +5,8 @@
 extern wchar_t* editorMessage[20];
 extern wchar_t* welcomMessage[26];
 extern WORD const popUPBack[4];
-extern wchar_t* gamePlayinfo[28];
+extern wchar_t* gamePlayinfo[30];
+
 
 class tuiPOPUP
 {
@@ -57,7 +58,7 @@ public:
 				tempCO.X = (116 - wcslen(m_ptMessage[i])) / 2 + 18 + 29;
 				if (i % 2 == 0)
 				{
-					tempCO.Y += 2;
+					tempCO.Y ++;
 					tempCO.X = (58 - wcslen(m_ptMessage[i])) / 2 + 18;
 				}
 				WriteConsoleOutputCharacter(hPOP, m_ptMessage[i], wcslen(m_ptMessage[i]), tempCO, &m_numWritten);
@@ -66,7 +67,7 @@ public:
 	}
 	void randomBack()
 	{
-		for (int i = 0; i < 2500;i++)
+		for (int i = 0; i < 3000;i++)
 		{
 			COORD tempCO = { rand() % 80 * 2, rand() % 40 };
 			FillConsoleOutputAttribute(hPOP, popUPBack[rand() % 4], 2, tempCO, &m_numWritten);
