@@ -6,7 +6,8 @@ extern wchar_t* editorMessage[20];
 extern wchar_t* welcomMessage[26];
 extern WORD const popUPBack[4];
 extern wchar_t* gamePlayinfo[30];
-
+extern wchar_t* selectMap[19];
+extern wchar_t* inGameInfo[18];
 
 class tuiPOPUP
 {

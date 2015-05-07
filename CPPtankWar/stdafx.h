@@ -2,6 +2,8 @@
 // or project specific include files that are used frequently, but
 // are changed infrequently
 //
+#pragma comment  (lib, "User32.lib")
+#pragma comment  (lib, "Gdi32.lib")
 
 #pragma once
 

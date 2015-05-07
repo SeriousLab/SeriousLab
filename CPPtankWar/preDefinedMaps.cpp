@@ -7,6 +7,7 @@ int g_map_mineField[40][80] = { 0 };
 int g_map_watchOnly[40][80] = { 0 };
 int rawMap[40][80] = { 0 };
 
+
 void initialPreDefinedMaps()
 {
 	for (int x = 0; x < 40; x++)

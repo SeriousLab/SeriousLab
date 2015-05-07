@@ -35,16 +35,16 @@ public:
 
 	CTank(int directionT, COORD tankPOS, int tankID, bool isFriendly, bool isComputer, bool isSuper);
 	~CTank();
-	void zipTank()
+	void zipTank(HANDLE hOut)
 	{
-		eraseTank();
+		eraseTank(hOut);
 		isZipped = true;
 		m_tankPOS = vecPortal[rand() % vecPortal.size()];
-		while (tankHitTest())
+		while (tankHitTest(hOut))
 		{
 			m_tankPOS = vecPortal[rand() % vecPortal.size()];
 		}
-		printTank();
+		printTank(hOut);
 		m_tankLastPOS = m_tankPOS;
 		m_tankLastDirection = m_tankDirection;
 		stepCount = 0;
@@ -54,11 +54,11 @@ public:
 	{
 		m_tankID = id;
 	}
-	void tankMove(int Tankdirection);
+	void tankMove(int Tankdirection,HANDLE hOut);
 
-	bool tankHitTest();
-	void printTank();
-	void eraseTank();
+	bool tankHitTest(HANDLE hOut);
+	void printTank(HANDLE hOut);
+	void eraseTank(HANDLE hOut);
 
 	
 private:

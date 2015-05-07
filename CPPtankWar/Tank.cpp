@@ -45,16 +45,20 @@ CTank::~CTank()
 {
 }
 
-void CTank::printTank()
+void CTank::printTank(HANDLE hOut)
 {
 	DWORD dwDrawTank;
 	if (isMistMode)
 	{
-		if (m_tankID==1||m_tankID==2)
+		if (m_isTankFriendly)
 		{
 			for (int p = 0; p < 81; p++)
 			{
 				COORD tempMist = { m_tankPOS.X + mistCO[0][p], m_tankPOS.Y + mistCO[1][p] };
+				if (tempMist.X<0 || tempMist.Y<0 || tempMist.X>159 || tempMist.Y>39)
+				{
+					continue;
+				}
 				WriteConsoleOutputAttribute(hOut, &wallColor[pDefaultMap[tempMist.Y][tempMist.X / 2] / 11111 % 10], 1, tempMist, &dwDrawTank);
 				WriteConsoleOutputCharacter(hOut, wallType[pDefaultMap[tempMist.Y][tempMist.X / 2] / 11111 % 10], 1, tempMist, &dwDrawTank);
 				tempMist.X++;
@@ -67,6 +71,10 @@ void CTank::printTank()
 					continue;
 				}
 				COORD tempCO = { m_tankPOS.X + tankDirect[m_tankDirection][0][i], m_tankPOS.Y + tankDirect[m_tankDirection][1][i] };
+				if (tempCO.X<0 || tempCO.Y<0 || tempCO.X>159 || tempCO.Y>39)
+				{
+					continue;
+				}
 				WriteConsoleOutputAttribute(hOut, &tankColor[(m_isTankFriendly ? 1 : 0)], 1, tempCO, &dwDrawTank);
 				WriteConsoleOutputCharacter(hOut, L"¡ö", 1, tempCO, &dwDrawTank);
 				tempCO.X++;
@@ -78,10 +86,14 @@ void CTank::printTank()
 			for (int v = 0; v < 6; v++)
 			{
 				COORD tempCO = { m_tankPOS.X + tankDirect[m_tankDirection][0][v], m_tankPOS.Y + tankDirect[m_tankDirection][1][v] };
+				if (tempCO.X<0 || tempCO.Y<0 || tempCO.X>159 || tempCO.Y>39)
+				{
+					continue;
+				}
 				for (int n = 0; n < 81; n++)
 				{
-					COORD tempMist = { m_tankPOS.X + mistCO[0][n], m_tankPOS.Y + mistCO[1][n] };
-					if (tempCO.X == tempMist.X&&tempCO.Y == tempMist.Y)
+					COORD tempMist = { vecTank[0].m_tankPOS.X + mistCO[0][n], vecTank[0].m_tankPOS.Y + mistCO[1][n] };
+					if ((tempCO.X == tempMist.X) && (tempCO.Y == tempMist.Y))
 					{
 						if (pDefaultMap[m_tankPOS.Y + tankDirect[m_tankDirection][1][v]][(m_tankPOS.X + tankDirect[m_tankDirection][0][v]) / 2] == BUSH)
 						{
@@ -94,36 +106,100 @@ void CTank::printTank()
 					}
 				}
 			}
+			return;
 		}
-		
+
 	}
+	else
+	{
+		for (int w = 0; w < 6; w++)
+		{
+			COORD tempCO = { m_tankPOS.X + tankDirect[m_tankDirection][0][w], m_tankPOS.Y + tankDirect[m_tankDirection][1][w] };
+
+			if (pDefaultMap[tempCO.Y][tempCO.X / 2] == BUSH)
+			{
+				continue;
+			}
+			WriteConsoleOutputAttribute(hOut, &tankColor[(m_isTankFriendly ? 1 : 0)], 1, tempCO, &dwDrawTank);
+			WriteConsoleOutputCharacter(hOut, L"¡ö", 1, tempCO, &dwDrawTank);
+			tempCO.X++;
+			WriteConsoleOutputAttribute(hOut, &tankColor[(m_isTankFriendly ? 1 : 0)], 1, tempCO, &dwDrawTank);
+		}
+	}
+
 }
 
-void CTank::eraseTank()
+void CTank::eraseTank(HANDLE hOut)
 {
 	DWORD dwErase;
 	if (isMistMode)
 	{
-		for (int p = 0; p < 81; p++)
+		if (m_isTankFriendly)
 		{
-			COORD tempMist = { m_tankPOS.X + mistCO[0][p], m_tankPOS.Y + mistCO[1][p] };
-			WriteConsoleOutputAttribute(hOut, &wallColor[EMPTY], 1, tempMist, &dwErase);
-			WriteConsoleOutputCharacter(hOut, wallType[EMPTY], 1, tempMist, &dwErase);
-			tempMist.X++;
-			WriteConsoleOutputAttribute(hOut, &wallColor[EMPTY], 1, tempMist, &dwErase);
+			for (int p = 0; p < 81; p++)
+			{
+				COORD tempMist = { m_tankPOS.X + mistCO[0][p], m_tankPOS.Y + mistCO[1][p] };
+				if (tempMist.X<0 || tempMist.X>159 || tempMist.Y<0 || tempMist.Y>39)
+				{
+					continue;
+				}
+				WriteConsoleOutputAttribute(hOut, &wallColor[EMPTY], 1, tempMist, &dwErase);
+				WriteConsoleOutputCharacter(hOut, wallType[EMPTY], 1, tempMist, &dwErase);
+				tempMist.X++;
+				WriteConsoleOutputAttribute(hOut, &wallColor[EMPTY], 1, tempMist, &dwErase);
+			}
+			return;
+		}
+		else
+		{
+			for (int v = 0; v < 6; v++)
+			{
+				COORD tempCO = { m_tankLastPOS.X + tankDirect[m_tankLastDirection][0][v], m_tankLastPOS.Y + tankDirect[m_tankLastDirection][1][v] };
+				for (int n = 0; n < 81; n++)
+				{
+					COORD tempMist = { vecTank[0].m_tankPOS.X + mistCO[0][n], vecTank[0].m_tankPOS.Y + mistCO[1][n] };
+					if (tempMist.X<0 || tempMist.Y<0 || tempMist.X>159 || tempMist.Y>39)
+					{
+						continue;
+					}
+					if ((tempCO.X == tempMist.X) && (tempCO.Y == tempMist.Y))
+					{
+						if (pDefaultMap[tempCO.Y][tempCO.X / 2] == BUSH)
+						{
+							continue;
+						}
+						if (pDefaultMap[tempCO.Y][tempCO.X / 2] == MINE)
+						{
+							WriteConsoleOutputAttribute(hOut, &wallColor[EMPTY], 1, tempCO, &dwErase);
+							WriteConsoleOutputCharacter(hOut, wallType[EMPTY], 1, tempCO, &dwErase);
+							WriteConsoleOutputAttribute(hOut, &wallColor[EMPTY], 1, tempCO, &dwErase);
+							continue;
+						}
+						WriteConsoleOutputAttribute(hOut, &wallColor[pDefaultMap[tempCO.Y][tempCO.X / 2] / 11111 % 10], 1, tempCO, &dwErase);
+						WriteConsoleOutputCharacter(hOut, wallType[pDefaultMap[tempCO.Y][tempCO.X / 2] / 11111 % 10], 1, tempCO, &dwErase);
+						tempCO.X++;
+						WriteConsoleOutputAttribute(hOut, &wallColor[pDefaultMap[tempCO.Y][tempCO.X / 2] / 11111 % 10], 1, tempCO, &dwErase);
+						continue;
+					}
+				}
+			}
+			return;
 		}
 	}
-	for (int i = 0; i < 6; i++)
+	else
 	{
-		COORD tempErase = { m_tankLastPOS.X + tankDirect[m_tankLastDirection][0][i], m_tankLastPOS.Y + tankDirect[m_tankLastDirection][1][i] };
-		WriteConsoleOutputAttribute(hOut, &wallColor[(pDefaultMap[tempErase.Y][tempErase.X / 2] / 11111) % 10], 1, tempErase, &dwErase);
-		WriteConsoleOutputCharacter(hOut, wallType[(pDefaultMap[tempErase.Y][tempErase.X / 2] / 11111) % 10], 1, tempErase, &dwErase);
-		tempErase.X++;
-		WriteConsoleOutputAttribute(hOut, &wallColor[(pDefaultMap[tempErase.Y][tempErase.X / 2] / 11111) % 10], 1, tempErase, &dwErase);
+		for (int i = 0; i < 6; i++)
+		{
+			COORD tempErase = { m_tankLastPOS.X + tankDirect[m_tankLastDirection][0][i], m_tankLastPOS.Y + tankDirect[m_tankLastDirection][1][i] };
+			WriteConsoleOutputAttribute(hOut, &wallColor[(pDefaultMap[tempErase.Y][tempErase.X / 2] / 11111) % 10], 1, tempErase, &dwErase);
+			WriteConsoleOutputCharacter(hOut, wallType[(pDefaultMap[tempErase.Y][tempErase.X / 2] / 11111) % 10], 1, tempErase, &dwErase);
+			tempErase.X++;
+			WriteConsoleOutputAttribute(hOut, &wallColor[(pDefaultMap[tempErase.Y][tempErase.X / 2] / 11111) % 10], 1, tempErase, &dwErase);
+		}
 	}
 }
 
-bool CTank::tankHitTest()
+bool CTank::tankHitTest(HANDLE hOut)
 {
 	if (!m_isTraped)
 	{
@@ -145,7 +221,7 @@ bool CTank::tankHitTest()
 			case MINE:
 			{
 						 pDefaultMap[m_tankPOS.Y + tankDirect[m_tankDirection][1][i]][(m_tankPOS.X + tankDirect[m_tankDirection][0][i]) / 2] = 0;
-						 eraseTank();
+						 eraseTank(hOut);
 						 m_isAlive = false;
 						 return true;
 			}
@@ -162,7 +238,7 @@ bool CTank::tankHitTest()
 						   }
 						   else
 						   {
-							   zipTank();
+							   zipTank(hOut);
 						   }
 
 			}
@@ -196,16 +272,16 @@ bool CTank::tankHitTest()
 	return false;
 }
 
-void CTank::tankMove(int Tankdirection)
+void CTank::tankMove(int Tankdirection, HANDLE hOut)
 {
-	eraseTank();
+	eraseTank(hOut);
 	m_tankLastPOS = m_tankPOS;
 	m_tankPOS.X += tankPOSmove[Tankdirection][0][0];
 	m_tankPOS.Y += tankPOSmove[Tankdirection][1][0];
 	m_tankDirection = Tankdirection;
-	if (!tankHitTest())
+	if (!tankHitTest(hOut))
 	{
-		printTank();
+		printTank(hOut);
 		m_tankLastPOS = m_tankPOS;
 		m_tankLastDirection = m_tankDirection;
 		stepCount++;
@@ -221,11 +297,11 @@ void CTank::tankMove(int Tankdirection)
 		if (m_computerControl)
 		{
 			m_tankLastDirection = m_tankDirection = rand() % 4;
-			printTank();
+			printTank(hOut);
 			return;
 		}
 		m_tankLastDirection = m_tankDirection;
 		m_tankDirection = Tankdirection;
-		printTank();
+		printTank(hOut);
 	}
 }

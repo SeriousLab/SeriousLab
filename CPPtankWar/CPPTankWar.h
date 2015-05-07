@@ -7,6 +7,9 @@ void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer);
 void gameLayerSWAP();
 void setDefaultMap();
 void tankFire(COORD tankPOS, int dire, bool isSuper, int cID);
+void demoPlay();
+void mapSelect();
+void unFinished();
 
 extern bool exitTest;
 extern bool isINGAME;

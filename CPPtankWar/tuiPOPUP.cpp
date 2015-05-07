@@ -90,6 +90,48 @@ wchar_t* gamePlayinfo[30] = {
 	L" "
 };
 
+wchar_t* selectMap[19] = {
+	L"按 1 选择热带雨林",
+	L" ",
+	L" ",
+	L"按 2 选择钢铁长城",
+	L" ",
+	L" ",
+	L"按 3 选择步步惊心",
+	L" ",
+	L" ",
+	L"按 4 选择行星边际",
+	L" ",
+	L" ",
+	L"按 5 选择溜冰场//溜冰的鬼步没做",
+	L" ",
+	L" ",
+	L"按 6 选择干瞪眼",
+	L" ",
+	L" ",
+	L"按 7 随机载入地图"
+};
+
+wchar_t* inGameInfo[18] = {
+	L" ",
+	L" ",
+	L" ",
+	L" ",
+	L" ",
+	L" ",
+	L" ",
+	L" ",
+	L"作者太懒，根本没写...",
+	L" ",
+	L" ",
+	L" ",
+	L" ",
+	L" ",
+	L" ",
+	L" ",
+	L" ",
+	L" "
+};
 tuiPOPUP::tuiPOPUP(wchar_t* pszMessage[], size_t lengthOfMessage)
 {
 	hPOP = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);

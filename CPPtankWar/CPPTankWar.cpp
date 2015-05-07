@@ -20,6 +20,8 @@ bool exitTest;
 bool isINGAME;
 bool isEditor;
 bool isMistMode;
+bool isMapSelect;
+bool isWatchOnly;
 int(*pDefaultMap)[80];
 vector<COORD> vecPortal;
 vector<CTank> vecTank;
@@ -30,12 +32,12 @@ int tankPOSmap[40][80] = { 0 };
 int player1LifeCount = 3;
 int totalEnemyCount = 50;
 
-
 int _tmain(int argc, _TCHAR* argv[])
 {
 	exitTest = false;
 	isINGAME = true;
 	isMistMode = false;
+	isWatchOnly = false;
 	INPUT_RECORD irGameMode[128];
 	DWORD gameMODE;
 	time_t pTime;
@@ -48,9 +50,26 @@ int _tmain(int argc, _TCHAR* argv[])
 	tuiPOPUP gameOperationInfo(gamePlayinfo, _countof(gamePlayinfo));
 
 	initialPreDefinedMaps();
-
+	pDefaultMap = g_map_inTheJungle;
 	while (!exitTest)
 	{
+		time_t demoTest;
+		time(&demoTest);
+		if (demoTest - pTime > 7)
+		{
+			demoPlay();
+			time(&pTime);
+			pDefaultMap = g_map_inTheJungle;
+			gameWelcom.popUP();
+			vecTank.clear();
+			vecCan.clear();
+			vecPortal.clear();
+		}
+		if (!_kbhit())
+		{
+			continue;
+		}
+		time(&pTime);
 		ReadConsoleInput(hIn, irGameMode, 128, &gameMODE);
 		for (unsigned int i = 0; i < gameMODE; i++)
 		{
@@ -65,6 +84,7 @@ int _tmain(int argc, _TCHAR* argv[])
 							  Sleep(3000);
 							  isINGAME = true;
 							  gamePlay(hIn, hOut, false);
+							  time(&pTime);
 							  gameWelcom.popUP();
 							  break;
 				}
@@ -79,25 +99,40 @@ int _tmain(int argc, _TCHAR* argv[])
 				}
 				case 0x33:case VK_NUMPAD3:
 				{
+							  isMapSelect = true;
+							  mapSelect();
+							  gameWelcom.popUP();
+							  time(&pTime);
 							  break;
 				}
 				case 0x34:case VK_NUMPAD4:
 				{
+							  unFinished();
+							  time(&pTime);
+							  gameWelcom.popUP();
 							  break;
 				}
 				case 0x35:case VK_NUMPAD5:
 				{
+							  unFinished();
+							  time(&pTime);
+							  gameWelcom.popUP();
 							  break;
 				}
 				case 0x36:case VK_NUMPAD6:
 				{
 							  isEditor = true;
 							  mapEditor(hIn, hOut);
+							  pDefaultMap = rawMap;
 							  gameWelcom.popUP();
+							  time(&pTime);
 							  break;
 				}
 				case 0x37:case VK_NUMPAD7:
 				{
+							  unFinished();
+							  gameWelcom.popUP();
+							  time(&pTime);
 							  break;
 				}
 				case 0x38:case VK_NUMPAD8:
@@ -108,10 +143,14 @@ int _tmain(int argc, _TCHAR* argv[])
 							  isINGAME = true;
 							  gamePlay(hIn, hOut, true);
 							  gameWelcom.popUP();
+							  time(&pTime);
 							  break;
 				}
 				case 0x39:case VK_NUMPAD9:
 				{
+							  unFinished();
+							  time(&pTime);
+							  gameWelcom.popUP();
 							  break;
 				}
 				case VK_ESCAPE:
@@ -132,10 +171,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			}
 		}
 	}
-	/*int tttt = 0;
-	std::cin >> tttt;*/
-	//drawMap(g_map_watchOnly, hOut);
-	//mapEditor(hIn, hOut);
+
 	CloseHandle(hIn);
 	CloseHandle(hOut);
 	return 0;
@@ -202,7 +238,6 @@ void drawMap(int(*pMap)[80], HANDLE hOUT)
 
 void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
 {
-	pDefaultMap = g_map_planetEdge;
 	INPUT_RECORD irGame[128];
 	DWORD gameNUM;
 	drawMap(pDefaultMap, hOUT);
@@ -210,10 +245,18 @@ void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
 	COORD playerOneBirth = { 10, 4 };
 	for (int i = 0; i < 6; i++)
 	{
+		if (isWatchOnly)
+		{
+			COORD youCanWatch = { 20, 18 };
+			CTank temp(i % 4, youCanWatch, i + 1, true, false, false);
+			vecTank.push_back(temp);
+			isWatchOnly = false;
+			continue;
+		}
 		CTank temp(i % 4, playerOneBirth, i + 1, (i < 2 ? true : false), (i < 2 ? false : true), false);
 		vecTank.push_back(temp);
 	}
-	//CTank playerOne(UP, playerOneBirth, 1, true, false, 1);
+	vecTank[0].printTank(hOUT);
 
 	while (isINGAME)
 	{
@@ -222,7 +265,6 @@ void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
 			isINGAME = false;
 			continue;
 		}
-
 		for (unsigned int q = 0; q < vecCan.size(); q++)
 		{
 			if (!vecCan[q].isCannonAvailable)
@@ -239,7 +281,7 @@ void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
 		{
 			if (!vecTank[g].m_isAlive)
 			{
-				vecTank[g].eraseTank();
+				vecTank[g].eraseTank(hOUT);
 				vecTank.erase(vecTank.begin() + g);
 			}
 		}
@@ -255,12 +297,7 @@ void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
 						vecTank[i].m_tankDirection = rand() % 4;
 					}
 				}
-				vecTank[i].tankMove(vecTank[i].m_tankDirection);
-				/*if (!vecTank[i].m_isAlive)
-				{
-				vecTank.erase(vecTank.begin() + i);
-				continue;
-				}*/
+				vecTank[i].tankMove(vecTank[i].m_tankDirection, hOUT);
 			}
 		}
 		Sleep(250 / (vecTank.size() + 1));
@@ -282,26 +319,46 @@ void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
 				{
 				case VK_UP:
 				{
-							  vecTank[0].tankMove(UP);
+							  if (!vecTank[0].m_isAlive)
+							  {
+								  break;
+							  }
+							  vecTank[0].tankMove(UP, hOUT);
 							  break;
 				}
 				case VK_DOWN:
 				{
-								vecTank[0].tankMove(DOWN);
+								if (!vecTank[0].m_isAlive)
+								{
+									break;
+								}
+								vecTank[0].tankMove(DOWN, hOUT);
 								break;
 				}
 				case VK_LEFT:
 				{
-								vecTank[0].tankMove(LEFT);
+								if (!vecTank[0].m_isAlive)
+								{
+									break;
+								}
+								vecTank[0].tankMove(LEFT, hOUT);
 								break;
 				}
 				case VK_RIGHT:
 				{
-								 vecTank[0].tankMove(RIGHT);
+								 if (!vecTank[0].m_isAlive)
+								 {
+									 break;
+								 }
+								 vecTank[0].tankMove(RIGHT, hOUT);
 								 break;
 				}
 				case VK_SPACE:
 				{
+								 if (!vecTank[0].m_isAlive)
+								 {
+									 break;
+								 }
 								 tankFire(vecTank[0].m_tankPOS, vecTank[0].m_tankDirection, vecTank[0].m_isSuper, vecCan.size() + 1);
 								 break;
 				}
@@ -347,7 +404,8 @@ void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
 				}
 				case VK_TAB:
 				{
-
+							   unFinished();
+							   SetConsoleActiveScreenBuffer(hOUT);
 				}
 				default:
 					break;
@@ -371,4 +429,140 @@ void tankFire(COORD tankPOS, int dire, bool isSuper, int cID)
 {
 	CCannon tempCannon(tankPOS, dire, isSuper, cID);
 	vecCan.push_back(tempCannon);
+}
+
+void mapSelect()
+{
+	tuiPOPUP mapSelectPop(selectMap, _countof(selectMap));
+	mapSelectPop.popUP();
+	INPUT_RECORD irMAPS[128];
+	DWORD numRead;
+	while (isMapSelect)
+	{
+		if (!_kbhit())
+		{
+			continue;
+		}
+		ReadConsoleInput(hIn, irMAPS, 128, &numRead);
+		for (unsigned int i = 0; i < numRead; i++)
+		{
+			if (irMAPS[i].Event.KeyEvent.bKeyDown)
+			{
+
+				switch (irMAPS[i].Event.KeyEvent.wVirtualKeyCode)
+				{
+				case 0x31:case VK_NUMPAD1:
+				{
+							  pDefaultMap = g_map_inTheJungle;
+							  isMapSelect = false;
+							  return;
+
+				}
+				case 0x32:case VK_NUMPAD2:
+				{
+							  pDefaultMap = g_map_ironGreatWall;
+							  isMapSelect = false;
+							  return;
+				}
+				case 0x33:case VK_NUMPAD3:
+				{
+							  pDefaultMap = g_map_mineField;
+							  isMapSelect = false;
+							  return;
+				}
+				case 0x34:case VK_NUMPAD4:
+				{
+							  pDefaultMap = g_map_planetEdge;
+							  isMapSelect = false;
+							  return;
+				}
+				case 0x35:case VK_NUMPAD5:
+				{
+							  pDefaultMap = g_map_skiiYard;
+							  isMapSelect = false;
+							  return;
+				}
+				case 0x36:case VK_NUMPAD6:
+				{
+							  pDefaultMap = g_map_watchOnly;
+							  isWatchOnly = true;
+							  isMapSelect = false;
+							  return;
+				}
+				case 0x37:case VK_NUMPAD7:
+				{
+							  pDefaultMap = g_map_inTheJungle;
+							  isMapSelect = false;
+							  return;
+				}
+				default:
+					break;
+				}
+			}
+		}
+	}
+}
+
+void demoPlay()
+{
+	HANDLE hDemo = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+	COORD demoCO = { 160, 40 };
+	SetConsoleScreenBufferSize(hDemo, demoCO);
+	CONSOLE_CURSOR_INFO cciPUP;
+	cciPUP.bVisible = false;
+	cciPUP.dwSize = 1;
+	SetConsoleCursorInfo(hDemo, &cciPUP);
+	pDefaultMap = g_map_planetEdge;
+	drawMap(pDefaultMap, hDemo);
+	SetConsoleActiveScreenBuffer(hDemo);
+	isMistMode = false;
+	COORD xxx = { 10, 10 };
+	for (int i = 0; i < 6; i++)
+	{
+		CTank temp(i % 4, xxx, i + 1, false, true, false);
+		vecTank.push_back(temp);
+		xxx.X += 6;
+		xxx.Y += 3;
+	}
+	time_t startTime, endTime;
+	time(&startTime);
+	while (true)
+	{
+		for (unsigned int i = 0; i < vecTank.size(); i++)
+		{
+			if (vecTank[i].m_computerControl)
+			{
+				if (vecTank[i].m_isAlive)
+				{
+					if (rand() < 1000 ? true : false)
+					{
+						tankFire(vecTank[i].m_tankPOS, vecTank[i].m_tankDirection, vecTank[i].m_isSuper, vecCan.size() + 1);
+						vecTank[i].m_tankDirection = rand() % 4;
+					}
+				}
+				vecTank[i].tankMove(vecTank[i].m_tankDirection, hDemo);
+			}
+		}
+		Sleep(80);
+		time(&endTime);
+		if ((endTime - startTime) > 10)
+		{
+			CloseHandle(hDemo);
+			return;
+		}
+		if (_kbhit())
+		{
+			CloseHandle(hDemo);
+			return;
+		}
+
+	}
+
+}
+
+void unFinished()
+{
+	tuiPOPUP inGameINFO(inGameInfo, _countof(inGameInfo));
+	inGameINFO.popUP();
+	Sleep(3000);
 }

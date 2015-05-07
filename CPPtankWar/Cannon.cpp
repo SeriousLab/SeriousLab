@@ -33,17 +33,35 @@ CCannon::~CCannon()
 void CCannon::eraseCannon()
 {
 	bool isInMist = false;
-	for (int m = 0; m < 81; m++)
+	if (isMistMode)
 	{
-		COORD tempMist = { vecTank[0].m_tankPOS.X + mistCO[0][m], vecTank[0].m_tankPOS.Y + mistCO[1][m] };
-		if (m_cannonPos.X == tempMist.X&&m_cannonPos.Y == tempMist.Y)
+
+		for (int m = 0; m < 81; m++)
 		{
-			isInMist = true;
+			COORD tempMist = { vecTank[0].m_tankPOS.X + mistCO[0][m], vecTank[0].m_tankPOS.Y + mistCO[1][m] };
+			if (m_cannonPos.X == tempMist.X&&m_cannonPos.Y == tempMist.Y)
+			{
+				isInMist = true;
+			}
 		}
-	}
-	if (isInMist)
-	{
-		if (pDefaultMap[m_cannonLastPos.Y][m_cannonLastPos.X / 2] == MINE)
+		if (isInMist)
+		{
+			if (pDefaultMap[m_cannonLastPos.Y][m_cannonLastPos.X / 2] == MINE)
+			{
+				COORD tempCO = m_cannonLastPos;
+				WriteConsoleOutputAttribute(hOut, &wallColor[EMPTY], 1, m_cannonLastPos, &dwCannonWritten);
+				WriteConsoleOutputCharacter(hOut, wallType[EMPTY], 1, m_cannonLastPos, &dwCannonWritten);
+				tempCO.X++;
+				WriteConsoleOutputAttribute(hOut, &wallColor[EMPTY], 1, tempCO, &dwCannonWritten);
+				return;
+			}
+			COORD tempCO = m_cannonLastPos;
+			WriteConsoleOutputAttribute(hOut, &wallColor[(pDefaultMap[m_cannonLastPos.Y][m_cannonLastPos.X / 2] / 11111) % 10], 1, m_cannonLastPos, &dwCannonWritten);
+			WriteConsoleOutputCharacter(hOut, wallType[(pDefaultMap[m_cannonLastPos.Y][m_cannonLastPos.X / 2] / 11111) % 10], 1, m_cannonLastPos, &dwCannonWritten);
+			tempCO.X++;
+			WriteConsoleOutputAttribute(hOut, &wallColor[(pDefaultMap[m_cannonLastPos.Y][m_cannonLastPos.X / 2] / 11111) % 10], 1, tempCO, &dwCannonWritten);
+		}
+		else
 		{
 			COORD tempCO = m_cannonLastPos;
 			WriteConsoleOutputAttribute(hOut, &wallColor[EMPTY], 1, m_cannonLastPos, &dwCannonWritten);
@@ -52,45 +70,39 @@ void CCannon::eraseCannon()
 			WriteConsoleOutputAttribute(hOut, &wallColor[EMPTY], 1, tempCO, &dwCannonWritten);
 			return;
 		}
+	}
+	else
+	{
 		COORD tempCO = m_cannonLastPos;
 		WriteConsoleOutputAttribute(hOut, &wallColor[(pDefaultMap[m_cannonLastPos.Y][m_cannonLastPos.X / 2] / 11111) % 10], 1, m_cannonLastPos, &dwCannonWritten);
 		WriteConsoleOutputCharacter(hOut, wallType[(pDefaultMap[m_cannonLastPos.Y][m_cannonLastPos.X / 2] / 11111) % 10], 1, m_cannonLastPos, &dwCannonWritten);
 		tempCO.X++;
 		WriteConsoleOutputAttribute(hOut, &wallColor[(pDefaultMap[m_cannonLastPos.Y][m_cannonLastPos.X / 2] / 11111) % 10], 1, tempCO, &dwCannonWritten);
 	}
-	else
-	{
-		COORD tempCO = m_cannonLastPos;
-		WriteConsoleOutputAttribute(hOut, &wallColor[EMPTY], 1, m_cannonLastPos, &dwCannonWritten);
-		WriteConsoleOutputCharacter(hOut, wallType[EMPTY], 1, m_cannonLastPos, &dwCannonWritten);
-		tempCO.X++;
-		WriteConsoleOutputAttribute(hOut, &wallColor[EMPTY], 1, tempCO, &dwCannonWritten);
-		return;
-	}
-	
+
 }
 
 bool CCannon::cannonHitTest()
 {
-	for (unsigned int r = 0; r < vecCan.size();r++)
+	for (unsigned int r = 0; r < vecCan.size(); r++)
 	{
-		if ((vecCan[r].m_cannonPos.X == m_cannonPos.X)&&vecCan[r].m_cannonPos.Y==m_cannonPos.Y&&vecCan[r].m_cannonID!=m_cannonID)
+		if ((vecCan[r].m_cannonPos.X == m_cannonPos.X) && vecCan[r].m_cannonPos.Y == m_cannonPos.Y&&vecCan[r].m_cannonID != m_cannonID)
 		{
 			vecCan[r].isCannonAvailable = false;
 			isCannonAvailable = false;
 			return true;
 		}
 	}
-	for (unsigned int d = 0; d < vecTank.size();d++)
+	for (unsigned int d = 0; d < vecTank.size(); d++)
 	{
-		for (int b = 0; b < 6;b++)
+		for (int b = 0; b < 6; b++)
 		{
 			COORD tempTankCO = { vecTank[d].m_tankPOS.X + tankDirect[vecTank[d].m_tankDirection][0][b], vecTank[d].m_tankPOS.Y + tankDirect[vecTank[d].m_tankDirection][1][b] };
-			if (tempTankCO.X==m_cannonPos.Y&&tempTankCO.Y==m_cannonPos.Y)
+			if (tempTankCO.X == m_cannonPos.Y&&tempTankCO.Y == m_cannonPos.Y)
 			{
 				vecTank[d].m_isAlive = false;
 				isCannonAvailable = false;
-				vecTank[d].eraseTank();
+				vecTank[d].eraseTank(hOut);
 				return true;
 			}
 		}
@@ -142,15 +154,35 @@ bool CCannon::cannonHitTest()
 void CCannon::printCannon()
 {
 	bool isInMist = false;
-	for (int m = 0; m < 81;m++)
+	if (isMistMode)
 	{
-		COORD tempMist = { vecTank[0].m_tankPOS.X + mistCO[0][m], vecTank[0].m_tankPOS.Y + mistCO[1][m] };
-		if (m_cannonPos.X==tempMist.X&&m_cannonPos.Y==tempMist.Y)
+
+		for (int m = 0; m < 81; m++)
 		{
-			isInMist = true;
+			COORD tempMist = { vecTank[0].m_tankPOS.X + mistCO[0][m], vecTank[0].m_tankPOS.Y + mistCO[1][m] };
+			if (m_cannonPos.X == tempMist.X&&m_cannonPos.Y == tempMist.Y)
+			{
+				isInMist = true;
+			}
+		}
+		if (isInMist)
+		{
+			if (pDefaultMap[m_cannonPos.Y][m_cannonPos.X / 2] == BUSH)
+			{
+				return;
+			}
+			COORD tempCO = m_cannonPos;
+			WriteConsoleOutputAttribute(hOut, &cannonColor[pDefaultMap == g_map_skiiYard ? 1 : 0], 1, m_cannonPos, &dwCannonWritten);
+			WriteConsoleOutputCharacter(hOut, L"กั", 1, m_cannonPos, &dwCannonWritten);
+			tempCO.X++;
+			WriteConsoleOutputAttribute(hOut, &cannonColor[pDefaultMap == g_map_skiiYard ? 1 : 0], 1, tempCO, &dwCannonWritten);
+		}
+		else
+		{
+			return;
 		}
 	}
-	if (isInMist)
+	else
 	{
 		if (pDefaultMap[m_cannonPos.Y][m_cannonPos.X / 2] == BUSH)
 		{
@@ -162,11 +194,7 @@ void CCannon::printCannon()
 		tempCO.X++;
 		WriteConsoleOutputAttribute(hOut, &cannonColor[pDefaultMap == g_map_skiiYard ? 1 : 0], 1, tempCO, &dwCannonWritten);
 	}
-	else
-	{
-		return;
-	}
-	
+
 }
 
 void CCannon::cannonFly(int canID)
