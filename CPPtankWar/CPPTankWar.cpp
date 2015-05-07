@@ -27,11 +27,15 @@ vector<CCannon> vecCan;
 HANDLE hOut;
 HANDLE hIn;
 int tankPOSmap[40][80] = { 0 };
+int player1LifeCount = 3;
+int totalEnemyCount = 50;
+
 
 int _tmain(int argc, _TCHAR* argv[])
 {
 	exitTest = false;
 	isINGAME = true;
+	isMistMode = false;
 	INPUT_RECORD irGameMode[128];
 	DWORD gameMODE;
 	time_t pTime;
@@ -98,6 +102,12 @@ int _tmain(int argc, _TCHAR* argv[])
 				}
 				case 0x38:case VK_NUMPAD8:
 				{
+							  isMistMode = true;
+							  gameOperationInfo.popUP();
+							  Sleep(3000);
+							  isINGAME = true;
+							  gamePlay(hIn, hOut, true);
+							  gameWelcom.popUP();
 							  break;
 				}
 				case 0x39:case VK_NUMPAD9:
@@ -167,21 +177,32 @@ void drawMap(int(*pMap)[80], HANDLE hOUT)
 			}
 			if (pMap[x][y] == PORTAL)
 			{
-				COORD portalCO = { y*2, x };
+				COORD portalCO = { y * 2, x };
 				vecPortal.push_back(portalCO);
 			}
-			COORD temp = { 2 * y, x };
-			WriteConsoleOutputAttribute(hOUT, &wallColor[pMap[x][y] / 11111 % 10], 1, temp, &dwDRAWnRW);
-			WriteConsoleOutputCharacter(hOUT, wallType[(pMap[x][y] / 11111) % 10], 1, temp, &dwDRAWnRW);
-			temp.X++;
-			WriteConsoleOutputAttribute(hOUT, &wallColor[pMap[x][y] / 11111 % 10], 1, temp, &dwDRAWnRW);
+			if (isMistMode)
+			{
+				COORD temp = { 2 * y, x };
+				WriteConsoleOutputAttribute(hOUT, &wallColor[EMPTY], 1, temp, &dwDRAWnRW);
+				WriteConsoleOutputCharacter(hOUT, wallType[EMPTY], 1, temp, &dwDRAWnRW);
+				temp.X++;
+				WriteConsoleOutputAttribute(hOUT, &wallColor[EMPTY], 1, temp, &dwDRAWnRW);
+			}
+			else
+			{
+				COORD temp = { 2 * y, x };
+				WriteConsoleOutputAttribute(hOUT, &wallColor[pMap[x][y] / 11111 % 10], 1, temp, &dwDRAWnRW);
+				WriteConsoleOutputCharacter(hOUT, wallType[(pMap[x][y] / 11111) % 10], 1, temp, &dwDRAWnRW);
+				temp.X++;
+				WriteConsoleOutputAttribute(hOUT, &wallColor[pMap[x][y] / 11111 % 10], 1, temp, &dwDRAWnRW);
+			}
 		}
 	}
 }
 
 void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
 {
-	pDefaultMap = g_map_mineField;
+	pDefaultMap = g_map_planetEdge;
 	INPUT_RECORD irGame[128];
 	DWORD gameNUM;
 	drawMap(pDefaultMap, hOUT);
@@ -189,22 +210,57 @@ void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
 	COORD playerOneBirth = { 10, 4 };
 	for (int i = 0; i < 6; i++)
 	{
-		CTank temp(i % 4, playerOneBirth, i + 1, i < 2 ? true : false, i < 2 ? false : true, i + 1);
+		CTank temp(i % 4, playerOneBirth, i + 1, (i < 2 ? true : false), (i < 2 ? false : true), false);
 		vecTank.push_back(temp);
 	}
 	//CTank playerOne(UP, playerOneBirth, 1, true, false, 1);
 
 	while (isINGAME)
 	{
-		for (unsigned int i = 0; i < vecTank.size();i++)
+		if (player1LifeCount < 0)
+		{
+			isINGAME = false;
+			continue;
+		}
+
+		for (unsigned int q = 0; q < vecCan.size(); q++)
+		{
+			if (!vecCan[q].isCannonAvailable)
+			{
+				vecCan[q].eraseCannon();
+				vecCan.erase(vecCan.begin() + q);
+			}
+		}
+		for (unsigned int l = 0; l < vecCan.size(); l++)
+		{
+			vecCan[l].cannonFly(l);
+		}
+		for (unsigned int g = 2; g < vecTank.size(); g++)
+		{
+			if (!vecTank[g].m_isAlive)
+			{
+				vecTank[g].eraseTank();
+				vecTank.erase(vecTank.begin() + g);
+			}
+		}
+		for (unsigned int i = 0; i < vecTank.size(); i++)
 		{
 			if (vecTank[i].m_computerControl)
 			{
-				vecTank[i].tankMove(rand() % 4);
-				if (!vecTank[i].m_isAlive)
+				if (vecTank[i].m_isAlive)
 				{
-					vecTank.erase(vecTank.begin() + i);
+					if (rand() < 1000 ? true : false)
+					{
+						tankFire(vecTank[i].m_tankPOS, vecTank[i].m_tankDirection, vecTank[i].m_isSuper, vecCan.size() + 1);
+						vecTank[i].m_tankDirection = rand() % 4;
+					}
 				}
+				vecTank[i].tankMove(vecTank[i].m_tankDirection);
+				/*if (!vecTank[i].m_isAlive)
+				{
+				vecTank.erase(vecTank.begin() + i);
+				continue;
+				}*/
 			}
 		}
 		Sleep(250 / (vecTank.size() + 1));
@@ -217,6 +273,11 @@ void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
 		{
 			if (irGame[i].Event.KeyEvent.bKeyDown)
 			{
+				/*if (!vecTank[0].m_isAlive)
+				{
+				vecTank[0].m_isAlive = true;
+				player1LifeCount--;
+				}*/
 				switch (irGame[i].Event.KeyEvent.wVirtualKeyCode)
 				{
 				case VK_UP:
@@ -241,6 +302,7 @@ void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
 				}
 				case VK_SPACE:
 				{
+								 tankFire(vecTank[0].m_tankPOS, vecTank[0].m_tankDirection, vecTank[0].m_isSuper, vecCan.size() + 1);
 								 break;
 				}
 				case 0x57:
@@ -278,6 +340,9 @@ void gamePlay(HANDLE hIN, HANDLE hOUT, bool isDualPlayer)
 				case VK_ESCAPE:
 				{
 								  isINGAME = false;
+								  vecCan.clear();
+								  vecTank.clear();
+								  vecPortal.clear();
 								  break;
 				}
 				case VK_TAB:
@@ -302,3 +367,8 @@ void setDefaultMap()
 
 }
 
+void tankFire(COORD tankPOS, int dire, bool isSuper, int cID)
+{
+	CCannon tempCannon(tankPOS, dire, isSuper, cID);
+	vecCan.push_back(tempCannon);
+}
