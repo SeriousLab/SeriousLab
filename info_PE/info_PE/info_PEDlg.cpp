@@ -526,7 +526,7 @@ void Cinfo_PEDlg::OnCalc32776()
 	ZeroMemory(&stOpenFile, sizeof(OPENFILENAME));
 	stOpenFile.lStructSize = sizeof(OPENFILENAME);
 	stOpenFile.hwndOwner = m_hWnd;
-	stOpenFile.lpstrFilter = L"可执行文件(*.exe)\0*.exe\0所有文件(*.dll,*.exe,*.sys,*.ocx)\0*.dll;*.exe;*.sys;*.ocx\0";
+	stOpenFile.lpstrFilter = L"可执行文件(*.exe)\0*.exe\0所有文件(*.dll,*.exe,*.sys,*.ocx,*.com)\0*.dll;*.exe;*.sys;*.ocx;*.com\0";
 	//stOpenFile.lpstrFilter	= L"PE File\0*.exe\0*.dll\0"; // 格式有错 ？？？？
 	stOpenFile.lpstrFile = szFileName;
 	stOpenFile.nMaxFile = MAX_PATH;
