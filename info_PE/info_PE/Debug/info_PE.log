@@ -1,0 +1,12 @@
+﻿  stdafx.cpp
+  SectionEdit.cpp
+  ResourceTable.cpp
+  RelocationTable.cpp
+  MyListCtrl.cpp
+  info_PEDlg.cpp
+  info_PE.cpp
+  ImportTable.cpp
+  ExportTable.cpp
+  Calc.cpp
+  Generating Code...
+  info_PE.vcxproj -> C:\Users\Dominic\Documents\Visual Studio 2013\Projects\info_PE\Debug\info_PE.exe
