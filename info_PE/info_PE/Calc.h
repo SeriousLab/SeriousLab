@@ -25,13 +25,13 @@ public:
 	afx_msg void OnBnClickedButton1();
 	afx_msg void OnBnClickedButton3();
 	afx_msg void OnEnChangeEdit2();
-	size_t RVA2Offset(DWORD rVA, PVOID lpImage, DWORD dwSize);
-	size_t Offset2rVA(size_t offset, PVOID lpImage, DWORD dwSize);
-	size_t rVA2VA(size_t rVA, PVOID lpImage, DWORD dwSize);
-	size_t VA2rVA(size_t VA, PVOID lpImage, DWORD dwSize);
+	ULONGLONG RVA2Offset(ULONGLONG rVA, PVOID lpImage, DWORD dwSize);
+	ULONGLONG Offset2rVA(ULONGLONG offset, PVOID lpImage, DWORD dwSize);
+	ULONGLONG rVA2VA(ULONGLONG rVA, PVOID lpImage, DWORD dwSize);
+	ULONGLONG VA2rVA(ULONGLONG VA, PVOID lpImage, DWORD dwSize);
 	DWORD dwSize = 0;
 	PVOID lpFileImage = nullptr;
-	
+	BOOL isx64 = FALSE;
 	afx_msg void OnEnChangeEdit1();
 	afx_msg void OnEnChangeEdit3();
 	virtual BOOL OnInitDialog();

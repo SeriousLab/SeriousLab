@@ -14,8 +14,8 @@ public:
 
 	PVOID lpImage = nullptr;
 	DWORD dwSize = 0;
-
-	size_t RVA2Offset(DWORD rVA, PVOID lpImage, DWORD dwSize);
+	BOOL isx64 = FALSE;
+	ULONGLONG RVA2Offset(ULONGLONG rVA, PVOID lpImage, DWORD dwSize);
 
 	void PrintExport(PVOID lpImage, DWORD dwSize);
 	// Dialog Data

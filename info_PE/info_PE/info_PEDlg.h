@@ -36,6 +36,8 @@ public:
 	BOOL PE_fileTest(PVOID lpImage, DWORD dwSize);
 	void showPE_info(PVOID lpImage, DWORD dwSize);
 
+	BOOL isx64 = FALSE;
+
 	wchar_t szFile[MAX_PATH];
 	HANDLE hFile = nullptr;
 	CMyListCtrl m_ExtendedHeader;
@@ -51,4 +53,5 @@ public:
 	afx_msg void OnCalc32774();
 	afx_msg void OnCalc32775();
 	afx_msg void OnCalc32776();
+	afx_msg void OnDestroy();
 };

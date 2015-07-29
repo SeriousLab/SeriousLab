@@ -43,13 +43,13 @@ public:
 		// 添加一行，并设置第一个单元格内容
 		TCHAR* pText =
 			va_arg(vlist, TCHAR*);
-		InsertItem(nItemNum, pText);
+		int nIndex = InsertItem(nItemNum, pText);
 		for (int i = 1; i < nCount; i++)
 		{
 			//设置本行其他单元格内容
 			pText =
 				va_arg(vlist, TCHAR*);
-			SetItemText(nItemNum,
+			SetItemText(nIndex,
 				i, pText);
 		}
 		//结束获取参数

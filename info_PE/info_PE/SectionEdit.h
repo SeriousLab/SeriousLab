@@ -13,7 +13,7 @@ public:
 
 	DWORD dwSize = 0;
 	PVOID lpFileImage = nullptr;
-
+	BOOL isx64 = FALSE;
 	// Dialog Data
 	enum { IDD = IDD_DIALOG6 };
 

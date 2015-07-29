@@ -15,6 +15,7 @@ public:
 
 	DWORD dwSize = 0;
 	PVOID lpFileImage = nullptr;
+	BOOL isx64 = FALSE;
 
 	PIMAGE_RESOURCE_DIRECTORY pBase = nullptr;
 
@@ -22,7 +23,7 @@ public:
 
 	wchar_t* getTypeName(DWORD dwID);
 
-	size_t RVA2Offset(DWORD rVA, PVOID lpImage, DWORD dwSize);
+	ULONGLONG RVA2Offset(ULONGLONG rVA, PVOID lpImage, DWORD dwSize);
 
 // Dialog Data
 	enum { IDD = IDD_DIALOG4 };

@@ -47,14 +47,23 @@ BOOL CResourceTable::OnInitDialog()
 	m_ResourceItems.AddColumn(3, L"名称", 100, L"命名资源数", 100, L"ID资源数", 100);
 
 	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)lpFileImage;
-	PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((DWORD)lpFileImage + pDos->e_lfanew);
+	PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((size_t)lpFileImage + pDos->e_lfanew);
 
-	PIMAGE_DATA_DIRECTORY pDir = pNT->OptionalHeader.DataDirectory;
+	PIMAGE_DATA_DIRECTORY pDir = nullptr;
+
+	if (isx64)
+	{
+		pDir = (PIMAGE_DATA_DIRECTORY)((size_t)&(pNT->OptionalHeader) + sizeof(DWORD)* 28);
+	}
+	else
+	{
+		pDir = pNT->OptionalHeader.DataDirectory;
+	}
 	PIMAGE_DATA_DIRECTORY pResDir = &pDir[IMAGE_DIRECTORY_ENTRY_RESOURCE];
 
-	size_t stResOffset = RVA2Offset(pResDir->VirtualAddress, lpFileImage, dwSize);
+	ULONGLONG ullResOffset = RVA2Offset(pResDir->VirtualAddress, lpFileImage, dwSize);
 
-	pBase = (PIMAGE_RESOURCE_DIRECTORY)(stResOffset + (size_t)lpFileImage);
+	pBase = (PIMAGE_RESOURCE_DIRECTORY)(ullResOffset + (size_t)lpFileImage);
 
 	PIMAGE_RESOURCE_DIRECTORY_ENTRY pEntry = (PIMAGE_RESOURCE_DIRECTORY_ENTRY)(pBase + 1);
 
@@ -84,8 +93,8 @@ void CResourceTable::getResourceTable(HTREEITEM hNode, PIMAGE_RESOURCE_DIRECTORY
 				wchar_t szResRVA[MAX_PATH] = { 0 };
 				wsprintf(szResRVA, L"%#08X", pResData->OffsetToData);
 				wsprintf(szResSize, L"%#08X", pResData->Size);
-				size_t stOffset = RVA2Offset(pResData->OffsetToData, lpFileImage, dwSize);
-				wsprintf(szResOffset, L"%#08X", stOffset);
+				ULONGLONG ullOffset = RVA2Offset(pResData->OffsetToData, lpFileImage, dwSize);
+				wsprintf(szResOffset, L"%#08X", ullOffset);
 				editValue = (CEdit*)this->GetDlgItem(Edit_Res_Offset);
 				editValue->SetWindowTextW(szResOffset);
 				editValue = (CEdit*)this->GetDlgItem(Edit_Res_rVA);
@@ -162,18 +171,18 @@ void CResourceTable::getResourceTable(HTREEITEM hNode, PIMAGE_RESOURCE_DIRECTORY
 	}
 }
 
-size_t CResourceTable::RVA2Offset(DWORD rVA, PVOID lpImage, DWORD dwSize)
+ULONGLONG CResourceTable::RVA2Offset(ULONGLONG rVA, PVOID lpImage, DWORD dwSize)
 {
 	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)lpImage;
-	PIMAGE_NT_HEADERS32 pNT32 = (PIMAGE_NT_HEADERS32)((LONG)lpImage + pDos->e_lfanew);
+	PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((size_t)lpImage + pDos->e_lfanew);
 
-	PIMAGE_FILE_HEADER pFileHeader = &(pNT32->FileHeader);
+	PIMAGE_FILE_HEADER pFileHeader = &(pNT->FileHeader);
 
 	for (WORD i = 0; i < pFileHeader->NumberOfSections; i++)
 	{
-		PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNT32);
-		DWORD rVAbegin = pSection[i].VirtualAddress;
-		DWORD rVAend = pSection[i].Misc.VirtualSize + pSection[i].VirtualAddress;
+		PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNT);
+		ULONGLONG rVAbegin = pSection[i].VirtualAddress;
+		ULONGLONG rVAend = pSection[i].Misc.VirtualSize + pSection[i].VirtualAddress;
 		if (rVA >= rVAbegin && rVA < rVAend)
 		{
 			return rVA - pSection[i].VirtualAddress + pSection[i].PointerToRawData;
@@ -311,8 +320,8 @@ void CResourceTable::OnTvnSelchangedTree1(NMHDR *pNMHDR, LRESULT *pResult)
 		wchar_t szResRVA[MAX_PATH] = { 0 };
 		wsprintf(szResRVA, L"%#08X", pResData->OffsetToData);
 		wsprintf(szResSize, L"%#08X", pResData->Size);
-		size_t stOffset = RVA2Offset(pResData->OffsetToData, lpFileImage, dwSize);
-		wsprintf(szResOffset, L"%#08X", stOffset);
+		ULONGLONG ullOffset = RVA2Offset(pResData->OffsetToData, lpFileImage, dwSize);
+		wsprintf(szResOffset, L"%#08X", ullOffset);
 		editValue = (CEdit*)this->GetDlgItem(Edit_Res_Offset);
 		editValue->SetWindowTextW(szResOffset);
 		editValue = (CEdit*)this->GetDlgItem(Edit_Res_rVA);

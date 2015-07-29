@@ -14,9 +14,9 @@ public:
 
 	void printImportDLL(PVOID lpBuf, DWORD dwSize);
 
-	size_t RVA2Offset(DWORD rVA, PVOID lpImage, DWORD dwSize);
+	ULONGLONG RVA2Offset(ULONGLONG rVA, PVOID lpImage, DWORD dwSize);
 
-	void printImportFunctions(size_t iAT, size_t iNT,BOOL isIAT);
+	void printImportFunctions(ULONGLONG iAT, ULONGLONG iNT,BOOL isIAT);
 // Dialog Data
 	enum { IDD = IDD_DIALOG3 };
 
@@ -27,7 +27,7 @@ protected:
 public:
 	CMyListCtrl m_importDLL;
 	CMyListCtrl m_importFunctions;
-
+	BOOL isx64 = FALSE;
 	DWORD dwSize = 0;
 	PVOID lpFileImage = nullptr;
 	virtual BOOL OnInitDialog();

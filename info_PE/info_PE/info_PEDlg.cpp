@@ -80,6 +80,7 @@ BEGIN_MESSAGE_MAP(Cinfo_PEDlg, CDialogEx)
 	ON_COMMAND(ID_CALC_32774, &Cinfo_PEDlg::OnCalc32774)
 	ON_COMMAND(ID_CALC_32775, &Cinfo_PEDlg::OnCalc32775)
 	ON_COMMAND(ID_CALC_32776, &Cinfo_PEDlg::OnCalc32776)
+	ON_WM_DESTROY()
 END_MESSAGE_MAP()
 
 
@@ -117,7 +118,7 @@ BOOL Cinfo_PEDlg::OnInitDialog()
 	DragAcceptFiles(TRUE);
 	// TODO: Add extra initialization here
 
-	m_ExtendedHeader.AddColumn(2, L"Name", 180, L"Value", 180);
+	m_ExtendedHeader.AddColumn(2, L"Name", 180, L"Value", 200);
 	m_DataDir.AddColumn(3, L"Name", 140, L"Addr", 90, L"Size", 90);
 	m_SectionInfo.AddColumn(5, L"Name", 50, L"Offset", 80, L"Size", 80, L"rVA", 80, L"Size", 80);
 
@@ -237,6 +238,7 @@ void Cinfo_PEDlg::getPEinfo(LPCTSTR szFileName)
 		wsprintf(szBackUp, L"%s.bak", szFileName);
 		CopyFile(szFileName, szBackUp, FALSE);
 		showPE_info(lpFileImage, dwSize);
+		SetWindowText(szFileName);
 	}
 	CloseHandle(hFile);
 
@@ -250,8 +252,8 @@ BOOL Cinfo_PEDlg::PE_fileTest(PVOID lpImage, DWORD dwSize)
 		MessageBox(L"非PE文件!");
 		return FALSE;
 	}
-	PIMAGE_NT_HEADERS32 pNT32 = (PIMAGE_NT_HEADERS32)((LONG)lpImage + pDos->e_lfanew);
-	if (pNT32->Signature != IMAGE_NT_SIGNATURE)
+	PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((size_t)lpImage + pDos->e_lfanew);
+	if (pNT->Signature != IMAGE_NT_SIGNATURE)
 	{
 		MessageBox(L"非PE文件");
 		return FALSE;
@@ -266,9 +268,9 @@ void Cinfo_PEDlg::showPE_info(PVOID lpImage, DWORD dwSize)
 	m_DataDir.DeleteAllItems();
 
 	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)lpImage;
-	PIMAGE_NT_HEADERS32 pNt32 = (PIMAGE_NT_HEADERS32)((LONG)lpImage + pDos->e_lfanew);
+	PIMAGE_NT_HEADERS pNt = (PIMAGE_NT_HEADERS)((size_t)lpImage + pDos->e_lfanew);
 
-	PIMAGE_FILE_HEADER pFileHeader = &(pNt32->FileHeader);
+	PIMAGE_FILE_HEADER pFileHeader = &(pNt->FileHeader);
 	wchar_t szMachine[32] = { 0 };
 	switch (pFileHeader->Machine)
 	{
@@ -287,6 +289,21 @@ void Cinfo_PEDlg::showPE_info(PVOID lpImage, DWORD dwSize)
 									StringCchCopy(szMachine, 32, L"Intel 386");
 									break;
 	}
+	case IMAGE_FILE_MACHINE_AMD64:
+	{
+									 StringCchCopy(szMachine, 32, L"AMD64 K8");
+									 break;
+	}
+	case IMAGE_FILE_MACHINE_POWERPC:
+	{
+									   StringCchCopy(szMachine, 32, L"IBM POWERPC");
+									   break;
+	}
+	case IMAGE_FILE_MACHINE_ARM:
+	{
+								   StringCchCopy(szMachine, 32, L"ARM Little-Endian");
+								   break;
+	}
 	default:
 		break;
 	}
@@ -301,7 +318,7 @@ void Cinfo_PEDlg::showPE_info(PVOID lpImage, DWORD dwSize)
 	pWnd->SetWindowText(szNumofSection);
 	pWnd = nullptr;
 
-	PIMAGE_OPTIONAL_HEADER32 pOptional = &(pNt32->OptionalHeader);
+	PIMAGE_OPTIONAL_HEADER pOptional = &(pNt->OptionalHeader);
 	wchar_t szFileType[16] = { 0 };
 	switch (pOptional->Magic)
 	{
@@ -324,6 +341,11 @@ void Cinfo_PEDlg::showPE_info(PVOID lpImage, DWORD dwSize)
 		break;
 	}
 
+	if (pOptional->Magic == IMAGE_NT_OPTIONAL_HDR64_MAGIC)
+	{
+		isx64 = TRUE;
+	}
+
 	m_ExtendedHeader.Additem(0, 2, L"文件类型", szFileType);
 
 	wchar_t szLinkerVersion[10] = { 0 };
@@ -331,27 +353,70 @@ void Cinfo_PEDlg::showPE_info(PVOID lpImage, DWORD dwSize)
 	m_ExtendedHeader.Additem(1, 2, L"连接器版本", szLinkerVersion);
 
 	wchar_t szEntryPoint[32] = { 0 };
-	wsprintf(szEntryPoint, L"%#08X [%#08X]", pOptional->AddressOfEntryPoint + pOptional->ImageBase, pOptional->AddressOfEntryPoint);
+	if (isx64)
+	{
+		wsprintf(szEntryPoint, L"%#08X [%#08X]", pOptional->AddressOfEntryPoint + pOptional->ImageBase, pOptional->AddressOfEntryPoint);
+	}
+	else
+	{
+		wsprintf(szEntryPoint, L"%#08X [%#08X]", pOptional->AddressOfEntryPoint + pOptional->ImageBase, pOptional->AddressOfEntryPoint);
+	}
 	m_ExtendedHeader.Additem(2, 2, L"程序入口点", szEntryPoint);
 
 	wchar_t szCodeSegAddr[32] = { 0 };
-	wsprintf(szCodeSegAddr, L"%#08X", pOptional->BaseOfCode);
+	if (isx64)
+	{
+		wsprintf(szCodeSegAddr, L"%#016X", pOptional->BaseOfCode);
+	}
+	else
+	{
+		wsprintf(szCodeSegAddr, L"%#08X", pOptional->BaseOfCode);
+	}
 	m_ExtendedHeader.Additem(3, 2, L"代码段地址", szCodeSegAddr);
 
-	wchar_t szDataSegAddr[32] = { 0 };
-	wsprintf(szDataSegAddr, L"%#08X", pOptional->BaseOfData);
-	m_ExtendedHeader.Additem(4, 2, L"数据段地址", szDataSegAddr);
 
-	wchar_t szImageBase[32] = { 0 };
-	wsprintf(szImageBase, L"%#08X", pOptional->ImageBase);
-	m_ExtendedHeader.Additem(5, 2, L"映像基址", szImageBase);
+	if (!isx64)
+	{
+		wchar_t szDataSegAddr[32] = { 0 };
+		wsprintf(szDataSegAddr, L"%#08X", pOptional->BaseOfData);
+		m_ExtendedHeader.Additem(4, 2, L"数据段地址", szDataSegAddr);
+	}
+
+	if (isx64)
+	{
+		ULONGLONG *ull = (ULONGLONG*)((size_t)pOptional + sizeof(DWORD)* 6);
+		wchar_t szImageBase[32] = { 0 };
+		wsprintf(szImageBase, L"%#016X", *ull);
+		m_ExtendedHeader.Additem(5, 2, L"映像基址", szImageBase);
+	}
+	else
+	{
+		wchar_t szImageBase[32] = { 0 };
+		wsprintf(szImageBase, L"%#08X", pOptional->ImageBase);
+		m_ExtendedHeader.Additem(5, 2, L"映像基址", szImageBase);
+	}
+
 
 	wchar_t szFileAlignment[32] = { 0 };
-	wsprintf(szFileAlignment, L"%#08X", pOptional->FileAlignment);
+	if (isx64)
+	{
+		wsprintf(szFileAlignment, L"%#016X", pOptional->FileAlignment);
+	}
+	else
+	{
+		wsprintf(szFileAlignment, L"%#08X", pOptional->FileAlignment);
+	}
 	m_ExtendedHeader.Additem(6, 2, L"文件粒度", szFileAlignment);
 
 	wchar_t szSectionAlignment[32] = { 0 };
-	wsprintf(szSectionAlignment, L"%#08X", pOptional->SectionAlignment);
+	if (isx64)
+	{
+		wsprintf(szSectionAlignment, L"%#016X", pOptional->SectionAlignment);
+	}
+	else
+	{
+		wsprintf(szSectionAlignment, L"%#08X", pOptional->SectionAlignment);
+	}
 	m_ExtendedHeader.Additem(7, 2, L"内存粒度", szSectionAlignment);
 
 	wchar_t szSysVersion[32] = { 0 };
@@ -359,16 +424,43 @@ void Cinfo_PEDlg::showPE_info(PVOID lpImage, DWORD dwSize)
 	m_ExtendedHeader.Additem(8, 2, L"系统版本号", szSysVersion);
 
 	wchar_t szTotalImageSize[32] = { 0 };
-	wsprintf(szTotalImageSize, L"%#08X", pOptional->SizeOfImage);
+	if (isx64)
+	{
+		wsprintf(szTotalImageSize, L"%#016X", pOptional->SizeOfImage);
+	}
+	else
+	{
+		wsprintf(szTotalImageSize, L"%#08X", pOptional->SizeOfImage);
+	}
 	m_ExtendedHeader.Additem(9, 2, L"映像总大小", szTotalImageSize);
 
 	wchar_t szPESize[32] = { 0 };
-	wsprintf(szPESize, L"%#08X", pOptional->SizeOfHeaders);
+	if (isx64)
+	{
+		wsprintf(szPESize, L"%#016X", pOptional->SizeOfHeaders);
+	}
+	else
+	{
+		wsprintf(szPESize, L"%#08X", pOptional->SizeOfHeaders);
+	}
 	m_ExtendedHeader.Additem(10, 2, L"PE头大小", szPESize);
 
 	wchar_t szDataDirName[15][16] = { L"导出表", L"导入表", L"资源", L"异常", L"安全", L"基址重定位", L"调试", L"版权", L"全局指针", L"TLS", L"载入配置", L"绑定输入", L"导入地址(IAT)", L"延迟导入", L"COM描述符" };
 
-	for (DWORD i = 0; i < pOptional->NumberOfRvaAndSizes; i++)
+	PDWORD pd = nullptr;
+	PIMAGE_DATA_DIRECTORY pDataDir = nullptr;
+
+	if (isx64)
+	{
+		pd = (PDWORD)((size_t)pOptional + sizeof(DWORD)* 27);
+		pDataDir = (PIMAGE_DATA_DIRECTORY)((size_t)pOptional + sizeof(DWORD)* 28);
+	}
+	else
+	{
+		pd = &pOptional->NumberOfRvaAndSizes;
+		pDataDir = (PIMAGE_DATA_DIRECTORY)pOptional->DataDirectory;
+	}
+	for (DWORD i = 0; i < *pd; i++)
 	{
 		wchar_t szDirName[16] = { 0 };
 		if (i >= 14)
@@ -379,7 +471,6 @@ void Cinfo_PEDlg::showPE_info(PVOID lpImage, DWORD dwSize)
 		{
 			StringCchCopy(szDirName, 16, szDataDirName[i]);
 		}
-		PIMAGE_DATA_DIRECTORY pDataDir = (PIMAGE_DATA_DIRECTORY)pOptional->DataDirectory;
 		wchar_t szDirAddr[32] = { 0 };
 		wchar_t szDirSize[32] = { 0 };
 		wsprintf(szDirAddr, L"%#08X", pDataDir[i].VirtualAddress);
@@ -389,7 +480,7 @@ void Cinfo_PEDlg::showPE_info(PVOID lpImage, DWORD dwSize)
 
 	for (DWORD i = 0; i < pFileHeader->NumberOfSections; i++)
 	{
-		PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNt32);
+		PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNt);
 		char szSectionName[32] = { 0 };
 		wchar_t szOffset[32] = { 0 };
 		wchar_t szFileSize[32] = { 0 };
@@ -401,7 +492,7 @@ void Cinfo_PEDlg::showPE_info(PVOID lpImage, DWORD dwSize)
 		wsprintf(szRVA, L"%#08X", pSection[i].VirtualAddress);
 		wsprintf(szMemSize, L"%#08X", pSection[i].Misc.VirtualSize);
 		wchar_t szWideSectionName[32] = { 0 };
-		int nRet = MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, szSectionName, -1, szWideSectionName, 32);
+		MultiByteToWideChar(CP_ACP, MB_PRECOMPOSED, szSectionName, -1, szWideSectionName, 32);
 		m_SectionInfo.Additem(i, 5, szWideSectionName, szOffset, szFileSize, szRVA, szMemSize);
 	}
 
@@ -424,10 +515,18 @@ void Cinfo_PEDlg::OnRButtonUp(UINT nFlags, CPoint point)
 	else
 	{
 		PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)lpFileImage;
-		PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((DWORD)lpFileImage + pDos->e_lfanew);
+		PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((size_t)lpFileImage + pDos->e_lfanew);
 
-		PIMAGE_DATA_DIRECTORY pDir = pNT->OptionalHeader.DataDirectory;
-		PIMAGE_DATA_DIRECTORY pExportDir = &pDir[IMAGE_DIRECTORY_ENTRY_EXPORT];
+		PIMAGE_DATA_DIRECTORY pDir = nullptr;
+
+		if (isx64)
+		{
+			pDir = (PIMAGE_DATA_DIRECTORY)((size_t)&(pNT->OptionalHeader) + sizeof(DWORD)* 28);
+		}
+		else
+		{
+			pDir = pNT->OptionalHeader.DataDirectory;
+		}
 
 		if (pDir[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress == 0 || pDir[IMAGE_DIRECTORY_ENTRY_EXPORT].Size == 0)
 		{
@@ -459,6 +558,7 @@ void Cinfo_PEDlg::OnCalc32771()
 	CCalc calc;
 	calc.lpFileImage = lpFileImage;
 	calc.dwSize = dwSize;
+	calc.isx64 = isx64;
 	calc.DoModal();
 
 }
@@ -483,6 +583,7 @@ void Cinfo_PEDlg::OnCalc32772()
 	CExportTable et;
 	et.lpImage = lpFileImage;
 	et.dwSize = dwSize;
+	et.isx64 = isx64;
 	et.DoModal();
 }
 
@@ -493,6 +594,7 @@ void Cinfo_PEDlg::OnCalc32773()
 	CImportTable it;
 	it.lpFileImage = lpFileImage;
 	it.dwSize = dwSize;
+	it.isx64 = isx64;
 	it.DoModal();
 }
 
@@ -503,6 +605,7 @@ void Cinfo_PEDlg::OnCalc32774()
 	CResourceTable rt;
 	rt.lpFileImage = lpFileImage;
 	rt.dwSize = dwSize;
+	rt.isx64 = isx64;
 	rt.DoModal();
 }
 
@@ -513,6 +616,7 @@ void Cinfo_PEDlg::OnCalc32775()
 	CRelocationTable relocT;
 	relocT.lpFileImage = lpFileImage;
 	relocT.dwSize = dwSize;
+	relocT.isx64 = isx64;
 	relocT.DoModal();
 
 }
@@ -526,7 +630,7 @@ void Cinfo_PEDlg::OnCalc32776()
 	ZeroMemory(&stOpenFile, sizeof(OPENFILENAME));
 	stOpenFile.lStructSize = sizeof(OPENFILENAME);
 	stOpenFile.hwndOwner = m_hWnd;
-	stOpenFile.lpstrFilter = L"可执行文件(*.exe)\0*.exe\0所有文件(*.dll,*.exe,*.sys,*.ocx,*.com)\0*.dll;*.exe;*.sys;*.ocx;*.com\0";
+	stOpenFile.lpstrFilter = L"可执行文件(*.exe)\0*.exe\0所有文件(*.dll,*.exe,*.sys,*.ocx,*.com,*.scr,*.cpl)\0*.dll;*.exe;*.sys;*.ocx;*.com;*.scr;*.cpl\0";
 	//stOpenFile.lpstrFilter	= L"PE File\0*.exe\0*.dll\0"; // 格式有错 ？？？？
 	stOpenFile.lpstrFile = szFileName;
 	stOpenFile.nMaxFile = MAX_PATH;
@@ -542,4 +646,16 @@ void Cinfo_PEDlg::OnCalc32776()
 	{
 		return;
 	}
+}
+
+
+void Cinfo_PEDlg::OnDestroy()
+{
+	CDialogEx::OnDestroy();
+	if (lpFileImage != nullptr)
+	{
+		VirtualFree(lpFileImage, 0, MEM_RELEASE);
+		lpFileImage = nullptr;
+	}
+	// TODO: Add your message handler code here
 }

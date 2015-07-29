@@ -52,7 +52,7 @@ void CSectionEdit::OnBnClickedOk()
 		CDialogEx::OnOK();
 	}
 	WideCharToMultiByte(CP_ACP, MB_PRECOMPOSED, szName, 8, szSecName, 8, NULL, NULL);
-	DWORD dwSecSize = wcstol(szSize, &szEnd, 16);
+	size_t dwSecSize = wcstol(szSize, &szEnd, 16);
 
 
 

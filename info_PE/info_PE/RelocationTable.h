@@ -22,12 +22,13 @@ public:
 
 	DWORD dwSize = 0;
 	PVOID lpFileImage = nullptr;
+	BOOL isx64 = FALSE;
 
-	size_t RVA2Offset(DWORD rVA, PVOID lpImage, DWORD dwSize);
+	ULONGLONG RVA2Offset(ULONGLONG rVA, PVOID lpImage, DWORD dwSize);
 
-	wchar_t* getSection(DWORD rVA, PVOID lpImage, DWORD dwSize);
+	wchar_t* getSection(ULONGLONG rVA, PVOID lpImage, DWORD dwSize);
 
-	void getRelocItems(size_t stRVA, DWORD dwCount, PVOID lpBuf, DWORD dwSize);
+	void getRelocItems(ULONGLONG ullRVA, DWORD dwCount, PVOID lpBuf, DWORD dwSize);
 
 	wchar_t* getRelocType(DWORD dwType);
 

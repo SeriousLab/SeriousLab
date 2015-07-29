@@ -55,12 +55,22 @@ void CRelocationTable::getRelocTable(PVOID lpBuf, DWORD dwSize)
 {
 	m_blockTable.DeleteAllItems();
 	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)lpBuf;
-	PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((DWORD)lpBuf + pDos->e_lfanew);
+	PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((size_t)lpBuf + pDos->e_lfanew);
 
-	PIMAGE_DATA_DIRECTORY pDir = pNT->OptionalHeader.DataDirectory;
+	PIMAGE_DATA_DIRECTORY pDir = nullptr;
+
+	if (isx64)
+	{
+		pDir = (PIMAGE_DATA_DIRECTORY)((size_t)&(pNT->OptionalHeader) + sizeof(DWORD)* 28);
+	}
+	else
+	{
+		pDir = pNT->OptionalHeader.DataDirectory;
+	}
+
 	PIMAGE_DATA_DIRECTORY pRelocDir = &pDir[IMAGE_DIRECTORY_ENTRY_BASERELOC];
 
-	size_t stRelocOffset = RVA2Offset(pRelocDir->VirtualAddress, lpFileImage, dwSize);
+	ULONGLONG stRelocOffset = RVA2Offset(pRelocDir->VirtualAddress, lpFileImage, dwSize);
 
 	PIMAGE_BASE_RELOCATION pRelocBase = (PIMAGE_BASE_RELOCATION)(stRelocOffset + (size_t)lpBuf);
 
@@ -82,18 +92,18 @@ void CRelocationTable::getRelocTable(PVOID lpBuf, DWORD dwSize)
 	}
 }
 
-size_t CRelocationTable::RVA2Offset(DWORD rVA, PVOID lpImage, DWORD dwSize)
+ULONGLONG CRelocationTable::RVA2Offset(ULONGLONG rVA, PVOID lpImage, DWORD dwSize)
 {
 	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)lpImage;
-	PIMAGE_NT_HEADERS32 pNT32 = (PIMAGE_NT_HEADERS32)((LONG)lpImage + pDos->e_lfanew);
+	PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((size_t)lpImage + pDos->e_lfanew);
 
-	PIMAGE_FILE_HEADER pFileHeader = &(pNT32->FileHeader);
+	PIMAGE_FILE_HEADER pFileHeader = &(pNT->FileHeader);
 
 	for (WORD i = 0; i < pFileHeader->NumberOfSections; i++)
 	{
-		PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNT32);
-		DWORD rVAbegin = pSection[i].VirtualAddress;
-		DWORD rVAend = pSection[i].Misc.VirtualSize + pSection[i].VirtualAddress;
+		PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNT);
+		ULONGLONG rVAbegin = pSection[i].VirtualAddress;
+		ULONGLONG rVAend = pSection[i].Misc.VirtualSize + pSection[i].VirtualAddress;
 		if (rVA >= rVAbegin && rVA < rVAend)
 		{
 			return rVA - pSection[i].VirtualAddress + pSection[i].PointerToRawData;
@@ -102,20 +112,20 @@ size_t CRelocationTable::RVA2Offset(DWORD rVA, PVOID lpImage, DWORD dwSize)
 	return -1;
 }
 
-wchar_t* CRelocationTable::getSection(DWORD rVA, PVOID lpImage, DWORD dwSize)
+wchar_t* CRelocationTable::getSection(ULONGLONG rVA, PVOID lpImage, DWORD dwSize)
 {
 	static wchar_t szSection[MAX_PATH] = { 0 };
 	char szSectionName[32] = { 0 };
 	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)lpImage;
-	PIMAGE_NT_HEADERS32 pNT32 = (PIMAGE_NT_HEADERS32)((LONG)lpImage + pDos->e_lfanew);
+	PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((size_t)lpImage + pDos->e_lfanew);
 
-	PIMAGE_FILE_HEADER pFileHeader = &(pNT32->FileHeader);
+	PIMAGE_FILE_HEADER pFileHeader = &(pNT->FileHeader);
 
 	for (WORD i = 0; i < pFileHeader->NumberOfSections; i++)
 	{
-		PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNT32);
-		DWORD rVAbegin = pSection[i].VirtualAddress;
-		DWORD rVAend = pSection[i].Misc.VirtualSize + pSection[i].VirtualAddress;
+		PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNT);
+		ULONGLONG rVAbegin = pSection[i].VirtualAddress;
+		ULONGLONG rVAend = pSection[i].Misc.VirtualSize + pSection[i].VirtualAddress;
 		if (rVA >= rVAbegin && rVA < rVAend)
 		{
 			sprintf_s(szSectionName, "%s", pSection[i].Name);
@@ -143,34 +153,43 @@ void CRelocationTable::OnNMClickList8(NMHDR *pNMHDR, LRESULT *pResult)
 	m_blockTable.GetItemText(nIndex, 2, szRVA, MAX_PATH);
 	m_blockTable.GetItemText(nIndex, 3, szCount, MAX_PATH);
 
-	DWORD dwCount = wcstol(szCount, &endPtr, 16);
-	DWORD dwRVA = wcstol(szRVA, &endPtr, 16);
+	size_t dwCount = wcstol(szCount, &endPtr, 16);
+	size_t dwRVA = wcstol(szRVA, &endPtr, 16);
 
 	getRelocItems(dwRVA, dwCount, lpFileImage, dwSize);
 
 	*pResult = 0;
 }
 
-void CRelocationTable::getRelocItems(size_t stRVA, DWORD dwCount, PVOID lpBuf, DWORD dwSize)
+void CRelocationTable::getRelocItems(ULONGLONG ullRVA, DWORD dwCount, PVOID lpBuf, DWORD dwSize)
 {
 	m_itemTable.DeleteAllItems();
 
 	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)lpBuf;
-	PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((DWORD)lpBuf + pDos->e_lfanew);
+	PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((size_t)lpBuf + pDos->e_lfanew);
 
-	PIMAGE_DATA_DIRECTORY pDir = pNT->OptionalHeader.DataDirectory;
+	PIMAGE_DATA_DIRECTORY pDir = nullptr;
+
+	if (isx64)
+	{
+		pDir = (PIMAGE_DATA_DIRECTORY)((size_t)&(pNT->OptionalHeader) + sizeof(DWORD)* 28);
+	}
+	else
+	{
+		pDir = pNT->OptionalHeader.DataDirectory;
+	}
 	PIMAGE_DATA_DIRECTORY pRelocDir = &pDir[IMAGE_DIRECTORY_ENTRY_BASERELOC];
 
-	size_t stRelocOffset = RVA2Offset(pRelocDir->VirtualAddress, lpFileImage, dwSize);
+	ULONGLONG ullRelocOffset = RVA2Offset(pRelocDir->VirtualAddress, lpFileImage, dwSize);
 
-	PIMAGE_BASE_RELOCATION pRelocBase = (PIMAGE_BASE_RELOCATION)(stRelocOffset + (size_t)lpBuf);
+	PIMAGE_BASE_RELOCATION pRelocBase = (PIMAGE_BASE_RELOCATION)(ullRelocOffset + (size_t)lpBuf);
 
-	while (pRelocBase->VirtualAddress != stRVA)
+	while (pRelocBase->VirtualAddress != ullRVA)
 	{
 		pRelocBase = (PIMAGE_BASE_RELOCATION)((size_t)pRelocBase + pRelocBase->SizeOfBlock);
 	}
 
-	size_t stBaseOffset = RVA2Offset(stRVA, lpFileImage, dwSize);
+	ULONGLONG ullBaseOffset = RVA2Offset(ullRVA, lpFileImage, dwSize);
 	wchar_t szIndex[MAX_PATH] = { 0 };
 	wchar_t szRVA[MAX_PATH] = { 0 };
 	wchar_t szOffset[MAX_PATH] = { 0 };
@@ -179,16 +198,33 @@ void CRelocationTable::getRelocItems(size_t stRVA, DWORD dwCount, PVOID lpBuf, D
 
 
 	PTYPE_OFFSET pType = (PTYPE_OFFSET)(pRelocBase + 1);
-	for (DWORD i = 0; i < dwCount; i++)
+	if (isx64)
 	{
-		PDWORD pdwAddr = nullptr;
-		wsprintf(szIndex, L"%#08X", i);
-		wsprintf(szRVA, L"%#08X", pType[i].Offset + stRVA);
-		wsprintf(szOffset, L"%#08X", pType[i].Offset + stBaseOffset);
-		StringCchCopy(szType, MAX_PATH, getRelocType(pType[i].Type));
-		pdwAddr = (PDWORD)(pType[i].Offset + stBaseOffset + (size_t)lpFileImage);
-		wsprintf(szFarAddr, L"%#08X", *pdwAddr);
-		m_itemTable.Additem(i, 5, szIndex, szRVA, szOffset, szType, szFarAddr);
+		for (DWORD i = 0; i < dwCount; i++)
+		{
+			PDWORD pdwAddr = nullptr;
+			wsprintf(szIndex, L"%#08X", i);
+			wsprintf(szRVA, L"%#08X", pType[i].Offset + ullRVA);
+			wsprintf(szOffset, L"%#08X", pType[i].Offset + ullBaseOffset);
+			StringCchCopy(szType, MAX_PATH, getRelocType(pType[i].Type));
+			pdwAddr = (PDWORD)(pType[i].Offset + ullBaseOffset + (size_t)lpFileImage);
+			wsprintf(szFarAddr, L"%#08X", *pdwAddr);
+			m_itemTable.Additem(i, 5, szIndex, szRVA, szOffset, szType, szFarAddr);
+		}
+	}
+	else
+	{
+		for (DWORD i = 0; i < dwCount; i++)
+		{
+			PDWORD pdwAddr = nullptr;
+			wsprintf(szIndex, L"%#08X", i);
+			wsprintf(szRVA, L"%#08X", pType[i].Offset + ullRVA);
+			wsprintf(szOffset, L"%#08X", pType[i].Offset + ullBaseOffset);
+			StringCchCopy(szType, MAX_PATH, getRelocType(pType[i].Type));
+			pdwAddr = (PDWORD)(pType[i].Offset + ullBaseOffset + (size_t)lpFileImage);
+			wsprintf(szFarAddr, L"%#08X", *pdwAddr);
+			m_itemTable.Additem(i, 5, szIndex, szRVA, szOffset, szType, szFarAddr);
+		}
 	}
 }
 
@@ -237,19 +273,14 @@ wchar_t* CRelocationTable::getRelocType(DWORD dwType)
 				 StringCchCopy(szType, MAX_PATH, L"用于MISP16 JUMP[0x09]");
 				 break;
 	}
-	case 0x10:
+	case 0x0a:
 	{
-				 StringCchCopy(szType, MAX_PATH, L"64位修正[0x10]");
-				 break;
-	}
-	case 0x11:
-	{
-				 StringCchCopy(szType, MAX_PATH, L"未知");
+				 StringCchCopy(szType, MAX_PATH, L"64位修正[0x0A]");
 				 break;
 	}
 	default:
 	{
-			   wsprintf(szType, L"[%#08X]", dwType);
+			   wsprintf(szType, L"未定义[%#08X]", dwType);
 			   break;
 	}
 
@@ -304,10 +335,10 @@ void CRelocationTable::OnLvnKeydownList8(NMHDR *pNMHDR, LRESULT *pResult)
 	m_blockTable.GetItemText(nIndex, 2, szRVA, MAX_PATH);
 	m_blockTable.GetItemText(nIndex, 3, szCount, MAX_PATH);
 
-	DWORD dwCount = wcstol(szCount, &endPtr, 16);
-	DWORD dwRVA = wcstol(szRVA, &endPtr, 16);
+	size_t dwCount = wcstol(szCount, &endPtr, 16);
+	ULONGLONG ullRVA = wcstol(szRVA, &endPtr, 16);
 
-	getRelocItems(dwRVA, dwCount, lpFileImage, dwSize);
+	getRelocItems(ullRVA, dwCount, lpFileImage, dwSize);
 
 	*pResult = 0;
 }

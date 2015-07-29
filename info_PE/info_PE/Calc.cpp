@@ -102,7 +102,7 @@ void CCalc::OnEnChangeEdit2()
 	// send this notification unless you override the CDialogEx::OnInitDialog()
 	// function and call CRichEditCtrl().SetEventMask()
 	// with the ENM_CHANGE flag ORed into the mask.
-	
+
 
 	CString szRVA;
 	wchar_t *endPoint;
@@ -114,35 +114,35 @@ void CCalc::OnEnChangeEdit2()
 	}
 
 	edit_value->GetWindowTextW(szRVA);
-	DWORD dwRVA = wcstol(szRVA, &endPoint, 16);
-	if (dwRVA == 0)
+	ULONGLONG ullRVA = wcstol(szRVA, &endPoint, 16);
+	if (ullRVA == 0)
 	{
 		return;
 	}
-	size_t stOffset = RVA2Offset(dwRVA, lpFileImage, dwSize);
-	size_t stVA = rVA2VA(dwRVA, lpFileImage, dwSize);
+	ULONGLONG ullOffset = RVA2Offset(ullRVA, lpFileImage, dwSize);
+	ULONGLONG ullVA = rVA2VA(ullRVA, lpFileImage, dwSize);
 	wchar_t szOffset[MAX_PATH] = { 0 };
 	wchar_t szVA[MAX_PATH] = { 0 };
-	_itow_s(stOffset, szOffset, 16);
-	_itow_s(stVA, szVA, 16);
+	_ui64tow_s(ullOffset, szOffset, MAX_PATH, 16);
+	_ui64tow_s(ullVA, szVA, MAX_PATH, 16);
 	this->SetDlgItemTextW(IDC_EDIT1, szVA);
 	this->SetDlgItemTextW(IDC_EDIT3, szOffset);
 	// TODO:  Add your control notification handler code here
 }
 
 
-size_t CCalc::RVA2Offset(DWORD rVA, PVOID lpImage, DWORD dwSize)
+ULONGLONG CCalc::RVA2Offset(ULONGLONG rVA, PVOID lpImage, DWORD dwSize)
 {
 	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)lpImage;
-	PIMAGE_NT_HEADERS32 pNT32 = (PIMAGE_NT_HEADERS32)((LONG)lpImage + pDos->e_lfanew);
+	PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((size_t)lpImage + pDos->e_lfanew);
 
-	PIMAGE_FILE_HEADER pFileHeader = &(pNT32->FileHeader);
+	PIMAGE_FILE_HEADER pFileHeader = &(pNT->FileHeader);
 
 	for (WORD i = 0; i < pFileHeader->NumberOfSections; i++)
 	{
-		PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNT32);
-		DWORD rVAbegin = pSection[i].VirtualAddress;
-		DWORD rVAend = pSection[i].Misc.VirtualSize + pSection[i].VirtualAddress;
+		PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNT);
+		ULONGLONG rVAbegin = pSection[i].VirtualAddress;
+		ULONGLONG rVAend = pSection[i].Misc.VirtualSize + pSection[i].VirtualAddress;
 		if (rVA >= rVAbegin && rVA < rVAend)
 		{
 			return rVA - pSection[i].VirtualAddress + pSection[i].PointerToRawData;
@@ -152,18 +152,18 @@ size_t CCalc::RVA2Offset(DWORD rVA, PVOID lpImage, DWORD dwSize)
 	return -1;
 }
 
-size_t CCalc::Offset2rVA(size_t offset, PVOID lpImage, DWORD dwSize)
+ULONGLONG CCalc::Offset2rVA(ULONGLONG offset, PVOID lpImage, DWORD dwSize)
 {
 	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)lpImage;
-	PIMAGE_NT_HEADERS32 pNT32 = (PIMAGE_NT_HEADERS32)((LONG)lpImage + pDos->e_lfanew);
+	PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((size_t)lpImage + pDos->e_lfanew);
 
-	PIMAGE_FILE_HEADER pFileHeader = &(pNT32->FileHeader);
+	PIMAGE_FILE_HEADER pFileHeader = &(pNT->FileHeader);
 
 	for (WORD i = 0; i < pFileHeader->NumberOfSections; i++)
 	{
-		PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNT32);
-		DWORD dwSecBegin = pSection[i].PointerToRawData;
-		DWORD dwSecEnd = pSection[i].PointerToRawData + pSection[i].SizeOfRawData;
+		PIMAGE_SECTION_HEADER pSection = IMAGE_FIRST_SECTION(pNT);
+		ULONGLONG dwSecBegin = pSection[i].PointerToRawData;
+		ULONGLONG dwSecEnd = pSection[i].PointerToRawData + pSection[i].SizeOfRawData;
 		if (offset >= dwSecBegin && offset < dwSecEnd)
 		{
 			return offset - pSection[i].PointerToRawData + pSection[i].VirtualAddress;
@@ -172,24 +172,41 @@ size_t CCalc::Offset2rVA(size_t offset, PVOID lpImage, DWORD dwSize)
 	return -1;
 }
 
-size_t CCalc::rVA2VA(size_t rVA, PVOID lpImage, DWORD dwSize)
+ULONGLONG CCalc::rVA2VA(ULONGLONG rVA, PVOID lpImage, DWORD dwSize)
 {
 	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)lpImage;
-	PIMAGE_NT_HEADERS32 pNT32 = (PIMAGE_NT_HEADERS32)((LONG)lpImage + pDos->e_lfanew);
+	PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((size_t)lpImage + pDos->e_lfanew);
 
-	PIMAGE_OPTIONAL_HEADER32 pOptional = &(pNT32->OptionalHeader);
-
+	if (isx64)
+	{
+		PIMAGE_OPTIONAL_HEADER64 pOptional = (PIMAGE_OPTIONAL_HEADER64)&(pNT->OptionalHeader);
+		return pOptional->ImageBase + rVA;
+	}
+	PIMAGE_OPTIONAL_HEADER pOptional = &(pNT->OptionalHeader);
 	return pOptional->ImageBase + rVA;
 }
 
-size_t CCalc::VA2rVA(size_t VA, PVOID lpImage, DWORD dwSize)
+ULONGLONG CCalc::VA2rVA(ULONGLONG VA, PVOID lpImage, DWORD dwSize)
 {
 	PIMAGE_DOS_HEADER pDos = (PIMAGE_DOS_HEADER)lpImage;
-	PIMAGE_NT_HEADERS32 pNT32 = (PIMAGE_NT_HEADERS32)((LONG)lpImage + pDos->e_lfanew);
+	PIMAGE_NT_HEADERS pNT = (PIMAGE_NT_HEADERS)((size_t)lpImage + pDos->e_lfanew);
 
-	PIMAGE_OPTIONAL_HEADER32 pOptional = &(pNT32->OptionalHeader);
+	if (isx64)
+	{
+		PIMAGE_OPTIONAL_HEADER64 pOptional = (PIMAGE_OPTIONAL_HEADER64)&(pNT->OptionalHeader);
+		if (VA < pOptional->ImageBase)
+		{
+			return -1;
+		}
+		else
+		{
+			return VA - pOptional->ImageBase;
+		}
+	}
 
-	if (VA<pOptional->ImageBase)
+	PIMAGE_OPTIONAL_HEADER pOptional = &(pNT->OptionalHeader);
+
+	if (VA < pOptional->ImageBase)
 	{
 		return -1;
 	}
@@ -213,17 +230,17 @@ void CCalc::OnEnChangeEdit1()
 		return;
 	}
 	edit_value->GetWindowTextW(szVA);
-	DWORD dwVA = wcstol(szVA, &endPoint, 16);
-	if (dwVA == 0)
+	ULONGLONG ullVA = wcstol(szVA, &endPoint, 16);
+	if (ullVA == 0)
 	{
 		return;
 	}
-	size_t stRVA = VA2rVA(dwVA, lpFileImage, dwSize);
-	size_t stOffset = RVA2Offset(stRVA, lpFileImage, dwSize);
+	ULONGLONG ullRVA = VA2rVA(ullVA, lpFileImage, dwSize);
+	ULONGLONG ullOffset = RVA2Offset(ullRVA, lpFileImage, dwSize);
 	wchar_t szOffset[MAX_PATH] = { 0 };
 	wchar_t szRVA[MAX_PATH] = { 0 };
-	_itow_s(stOffset, szOffset, 16);
-	_itow_s(stRVA, szRVA, 16);
+	_ui64tow_s(ullOffset, szOffset, MAX_PATH, 16);
+	_ui64tow_s(ullRVA, szRVA, MAX_PATH, 16);
 	this->SetDlgItemTextW(IDC_EDIT2, szRVA);
 	this->SetDlgItemTextW(IDC_EDIT3, szOffset);
 	// TODO:  Add your control notification handler code here
@@ -246,17 +263,17 @@ void CCalc::OnEnChangeEdit3()
 		return;
 	}
 	edit_value->GetWindowTextW(szOffset);
-	DWORD dwOffset = wcstol(szOffset, &endPoint, 16);
-	if (dwOffset == 0)
+	ULONGLONG ullOffset = wcstol(szOffset, &endPoint, 16);
+	if (ullOffset == 0)
 	{
 		return;
 	}
-	size_t stRVA = Offset2rVA(dwOffset, lpFileImage, dwSize);
-	size_t stVA = rVA2VA(stRVA, lpFileImage, dwSize);
+	ULONGLONG ullRVA = Offset2rVA(ullOffset, lpFileImage, dwSize);
+	ULONGLONG ullVA = rVA2VA(ullRVA, lpFileImage, dwSize);
 	wchar_t szRVA[MAX_PATH] = { 0 };
 	wchar_t szVA[MAX_PATH] = { 0 };
-	_itow_s(stRVA, szRVA, 16);
-	_itow_s(stVA, szVA, 16);
+	_ui64tow_s(ullRVA, szRVA, MAX_PATH, 16);
+	_ui64tow_s(ullVA, szVA, MAX_PATH, 16);
 	this->SetDlgItemTextW(IDC_EDIT1, szVA);
 	this->SetDlgItemTextW(IDC_EDIT2, szRVA);
 	// TODO:  Add your control notification handler code here
